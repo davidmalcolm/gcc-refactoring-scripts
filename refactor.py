@@ -38,9 +38,9 @@ def make_final_field(name):
     return (('(?P<%s>.*),?' % name) + optws + "/\* (.*) \*/" + optws)
 
 PATTERN = (
-    'struct' + ws + 'rtl_opt_pass' + ws +r'(?P<classname>\S+)' + optws + '=' + optws +
+    'struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<classname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
-    'RTL_PASS,' + optws +
+    '(\S+_PASS),' + optws +
     make_field('name') +
     make_field('optinfo_flags') +
     make_field('gate') +
@@ -57,11 +57,11 @@ PATTERN = (
     '}' + optws + '}' + optws + ';'
 )
 
-TEMPLATE = '''class %(classname)s : public rtl_opt_pass
+TEMPLATE = '''class %(classname)s : public %(passkind)s
 {
  public:
   %(classname)s(context &ctxt)
-    : rtl_opt_pass(ctxt,
+    : %(passkind)s(ctxt,
                    %(name)s,				/* name */
                    %(optinfo_flags)s,                   /* optinfo_flags */
                    %(tv_id)s,				/* tv_id */
@@ -94,14 +94,20 @@ def refactor_pass_initializers(src):
             break
     return src
 
-path = '../src/gcc/cfgrtl.c'
-with open(path) as f:
-    src = f.read()
-#print(src)
-dst = refactor_pass_initializers(src)
-#print(dst)
+def refactor_file(path):
+    with open(path) as f:
+        src = f.read()
+    #print(src)
+    dst = refactor_pass_initializers(src)
+    #print(dst)
 
-for line in unified_diff(src.splitlines(),
-                         dst.splitlines(),
-                         fromfile=path, tofile=path):
-    sys.stdout.write('%s\n' % line)
+    for line in unified_diff(src.splitlines(),
+                             dst.splitlines(),
+                             fromfile=path, tofile=path):
+        sys.stdout.write('%s\n' % line)
+
+# examples of "struct rtl_opt_pass foo = {};"
+refactor_file('../src/gcc/cfgrtl.c')
+
+# examples of "struct gimple_opt_pass foo = {};"
+refactor_file('../src/gcc/tree-mudflap.c')
