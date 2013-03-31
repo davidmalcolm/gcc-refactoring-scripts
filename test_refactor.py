@@ -2,6 +2,11 @@ from refactor import refactor_pass_initializers
 import unittest
 
 class Tests(unittest.TestCase):
+    def assertRefactoringEquals(self, src, expected):
+        actual = refactor_pass_initializers(src)
+        self.maxDiff = 1024
+        self.assertMultiLineEqual(expected, actual) # 2.7+
+
     def test_pass_jump2(self):
         src = r"""
 foo bar
@@ -56,9 +61,7 @@ make_pass_jump2 (context &ctxt)
 
 baz qux
 """
-        actual = refactor_pass_initializers(src)
-        self.maxDiff = 1024
-        self.assertMultiLineEqual(expected, actual) # 2.7+
+        self.assertRefactoringEquals(src, expected)
 
 if __name__ == '__main__':
     unittest.main()
