@@ -33,6 +33,10 @@ optws = r'\s*'
 def make_field(name):
     return (('(?P<%s>.*),' % name) + optws + "/\* (.*) \*/" + optws)
 
+def make_final_field(name):
+    # trailing comma is optional:
+    return (('(?P<%s>.*),?' % name) + optws + "/\* (.*) \*/" + optws)
+
 PATTERN = (
     'struct' + ws + 'rtl_opt_pass' + ws +r'(?P<classname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
@@ -49,18 +53,11 @@ PATTERN = (
     make_field('properties_provided') +
     make_field('properties_destroyed') +
     make_field('todo_flags_start') +
-    make_field('todo_flags_finish') +
+    make_final_field('todo_flags_finish') +
     '}' + optws + '}' + optws + ';'
 )
 
-def refactor_pass_initializers(src):
-    dst = src
-    m = re.search(PATTERN, src,
-              re.MULTILINE)
-    if m:
-        print(m.groups())
-        d = m.groupdict()
-        replacement = ('''class %(classname)s : public rtl_opt_pass
+TEMPLATE = '''class %(classname)s : public rtl_opt_pass
 {
  public:
   %(classname)s(context &ctxt)
@@ -81,11 +78,21 @@ rtl_opt_pass *
 make_%(classname)s (context &ctxt)
 {
   return new %(classname)s (ctxt);
-}''' % d)
-        # FIXME: what about NULL gate?
-        # FIXME: what about NULL execute?
-        dst = (src[:m.start()] + replacement + src[m.end():])
-    return dst
+}'''
+
+def refactor_pass_initializers(src):
+    while 1:
+        m = re.search(PATTERN, src, re.MULTILINE)
+        if m:
+            # print(m.groups())
+            d = m.groupdict()
+            replacement = TEMPLATE % d
+            src = (src[:m.start()] + replacement + src[m.end():])
+            # FIXME: what about NULL gate?
+            # FIXME: what about NULL execute?
+        else:
+            break
+    return src
 
 path = '../src/gcc/cfgrtl.c'
 with open(path) as f:
