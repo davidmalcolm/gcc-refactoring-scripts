@@ -63,5 +63,55 @@ baz qux
 """
         self.assertRefactoringEquals(src, expected)
 
+
+    def test_pass_mudflap1(self):
+        src = r"""
+struct gimple_opt_pass pass_mudflap_1 =
+{
+ {
+  GIMPLE_PASS,
+  "mudflap1",                           /* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_mudflap,                         /* gate */
+  execute_mudflap_function_decls,       /* execute */
+  NULL,                                 /* sub */
+  NULL,                                 /* next */
+  0,                                    /* static_pass_number */
+  TV_NONE,                              /* tv_id */
+  PROP_gimple_any,                      /* properties_required */
+  0,                                    /* properties_provided */
+  0,                                    /* properties_destroyed */
+  0,                                    /* todo_flags_start */
+  0                                     /* todo_flags_finish */
+ }
+};
+"""
+        expected = r"""
+class pass_mudflap_1 : public gimple_opt_pass
+{
+ public:
+  pass_mudflap_1(context &ctxt)
+    : gimple_opt_pass(ctxt,
+                   "mudflap1",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_NONE,				/* tv_id */
+                   pass_properties(PROP_gimple_any, 0, 0),
+                   pass_todo_flags(0,
+                                   0                                     ))
+  {}
+
+  bool gate() { return gate_mudflap(); }
+  unsigned int execute() { return execute_mudflap_function_decls(); }
+};
+
+rtl_opt_pass *
+make_pass_mudflap_1 (context &ctxt)
+{
+  return new pass_mudflap_1 (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
+
 if __name__ == '__main__':
     unittest.main()

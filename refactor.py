@@ -30,6 +30,7 @@ PATTERN = (
     make_final_field('todo_flags_finish') +
     '}' + optws + '}' + optws + ';'
 )
+pattern = re.compile(PATTERN, re.MULTILINE)
 
 TEMPLATE = '''class %(classname)s : public %(passkind)s
 {
@@ -56,7 +57,7 @@ make_%(classname)s (context &ctxt)
 
 def refactor_pass_initializers(src):
     while 1:
-        m = re.search(PATTERN, src, re.MULTILINE)
+        m = pattern.search(src)
         if m:
             # print(m.groups())
             d = m.groupdict()
