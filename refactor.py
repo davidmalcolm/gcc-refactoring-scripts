@@ -1,3 +1,7 @@
+from difflib import unified_diff
+import re
+import sys
+
 src = r"""
 foo bar
 
@@ -24,7 +28,6 @@ struct rtl_opt_pass pass_jump2 =
 baz qux
 """
 
-import re
 ws = r'\s+'
 optws = r'\s*'
 def make_field(name):
@@ -50,13 +53,14 @@ PATTERN = (
     '}' + optws + '}' + optws + ';'
 )
 
-m = re.search(PATTERN, src,
+def refactor_pass_initializers(src):
+    dst = src
+    m = re.search(PATTERN, src,
               re.MULTILINE)
-print(m)
-if m:
-    print(m.groups())
-    d = m.groupdict()
-    replacement = ('''class %(classname)s : public rtl_opt_pass
+    if m:
+        print(m.groups())
+        d = m.groupdict()
+        replacement = ('''class %(classname)s : public rtl_opt_pass
 {
  public:
   %(classname)s(context &ctxt)
@@ -78,6 +82,19 @@ make_%(classname)s (context &ctxt)
 {
   return new %(classname)s (ctxt);
 }''' % d)
-    # FIXME: what about NULL gate?
-    # FIXME: what about NULL execute?
-    print(src[:m.start()] + replacement + src[m.end():])
+        # FIXME: what about NULL gate?
+        # FIXME: what about NULL execute?
+        dst = (src[:m.start()] + replacement + src[m.end():])
+    return dst
+
+path = '../src/gcc/cfgrtl.c'
+with open(path) as f:
+    src = f.read()
+#print(src)
+dst = refactor_pass_initializers(src)
+#print(dst)
+
+for line in unified_diff(src.splitlines(),
+                         dst.splitlines(),
+                         fromfile=path, tofile=path):
+    sys.stdout.write('%s\n' % line)
