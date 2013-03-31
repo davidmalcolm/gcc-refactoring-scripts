@@ -2,32 +2,6 @@ from difflib import unified_diff
 import re
 import sys
 
-src = r"""
-foo bar
-
-struct rtl_opt_pass pass_jump2 =
-{
- {
-  RTL_PASS,
-  "jump2",				/* name */
-  OPTGROUP_NONE,                        /* optinfo_flags */
-  NULL,					/* gate */
-  execute_jump2,			/* execute */
-  NULL,					/* sub */
-  NULL,					/* next */
-  0,					/* static_pass_number */
-  TV_JUMP,				/* tv_id */
-  0,					/* properties_required */
-  0,					/* properties_provided */
-  0,					/* properties_destroyed */
-  TODO_ggc_collect,			/* todo_flags_start */
-  TODO_verify_rtl_sharing,		/* todo_flags_finish */
- }
-};
-
-baz qux
-"""
-
 ws = r'\s+'
 optws = r'\s*'
 def make_field(name):
@@ -106,8 +80,10 @@ def refactor_file(path):
                              fromfile=path, tofile=path):
         sys.stdout.write('%s\n' % line)
 
-# examples of "struct rtl_opt_pass foo = {};"
-refactor_file('../src/gcc/cfgrtl.c')
+if __name__ == '__main__':
+    # examples of "struct rtl_opt_pass foo = {};"
+    refactor_file('../src/gcc/cfgrtl.c')
 
-# examples of "struct gimple_opt_pass foo = {};"
-refactor_file('../src/gcc/tree-mudflap.c')
+    # examples of "struct gimple_opt_pass foo = {};"
+    refactor_file('../src/gcc/tree-mudflap.c')
+
