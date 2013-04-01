@@ -1,5 +1,6 @@
 from collections import namedtuple
 from difflib import unified_diff
+import glob
 import re
 import sys
 
@@ -236,9 +237,7 @@ def refactor_file(path):
         sys.stdout.write('%s\n' % line)
 
 if __name__ == '__main__':
-    # examples of "struct rtl_opt_pass foo = {};"
-    refactor_file('../src/gcc/cfgrtl.c')
-
-    # examples of "struct gimple_opt_pass foo = {};"
-    refactor_file('../src/gcc/tree-mudflap.c')
+    for path in glob.glob('../src/gcc/*.c'):
+        print(path)
+        refactor_file(path)
 
