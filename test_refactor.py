@@ -4,7 +4,7 @@ import unittest
 class Tests(unittest.TestCase):
     def assertRefactoringEquals(self, src, expected):
         actual = refactor_pass_initializers(src)
-        self.maxDiff = 2048
+        self.maxDiff = 4096
         self.assertMultiLineEqual(expected, actual) # 2.7+
 
     def test_pass_jump2(self):
@@ -205,6 +205,121 @@ simple_ipa_opt_pass *
 make_pass_ipa_pta (context &ctxt)
 {
   return new pass_ipa_pta (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
+    def test_pass_ipa_cp(self):
+        # Test of a ipa_opt_pass_d (from gcc/ipa-cp.c)
+        # struct ipa_opt_pass_d pass_ipa_cp;
+        src = r"""
+struct ipa_opt_pass_d pass_ipa_cp =
+{
+ {
+  IPA_PASS,
+  "cp",				/* name */
+  OPTGROUP_NONE,                /* optinfo_flags */
+  cgraph_gate_cp,		/* gate */
+  ipcp_driver,			/* execute */
+  NULL,				/* sub */
+  NULL,				/* next */
+  0,				/* static_pass_number */
+  TV_IPA_CONSTANT_PROP,		/* tv_id */
+  0,				/* properties_required */
+  0,				/* properties_provided */
+  0,				/* properties_destroyed */
+  0,				/* todo_flags_start */
+  TODO_dump_symtab |
+  TODO_remove_functions | TODO_ggc_collect /* todo_flags_finish */
+ },
+ ipcp_generate_summary,			/* generate_summary */
+ ipcp_write_summary,			/* write_summary */
+ ipcp_read_summary,			/* read_summary */
+ ipa_prop_write_all_agg_replacement,	/* write_optimization_summary */
+ ipa_prop_read_all_agg_replacement,	/* read_optimization_summary */
+ NULL,			 		/* stmt_fixup */
+ 0,					/* TODOs */
+ ipcp_transform_function,		/* function_transform */
+ NULL,					/* variable_transform */
+};
+"""
+        expected = r"""
+"""
+        self.assertRefactoringEquals(src, expected)
+
+    def test_pass_ipa_cp(self):
+        # Test of a ipa_opt_pass_d (from gcc/ipa-cp.c)
+        # struct ipa_opt_pass_d pass_ipa_cp;
+        src = r"""
+struct ipa_opt_pass_d pass_ipa_cp =
+{
+ {
+  IPA_PASS,
+  "cp",				/* name */
+  OPTGROUP_NONE,                /* optinfo_flags */
+  cgraph_gate_cp,		/* gate */
+  ipcp_driver,			/* execute */
+  NULL,				/* sub */
+  NULL,				/* next */
+  0,				/* static_pass_number */
+  TV_IPA_CONSTANT_PROP,		/* tv_id */
+  0,				/* properties_required */
+  0,				/* properties_provided */
+  0,				/* properties_destroyed */
+  0,				/* todo_flags_start */
+  TODO_dump_symtab |
+  TODO_remove_functions | TODO_ggc_collect /* todo_flags_finish */
+ },
+ ipcp_generate_summary,			/* generate_summary */
+ ipcp_write_summary,			/* write_summary */
+ ipcp_read_summary,			/* read_summary */
+ ipa_prop_write_all_agg_replacement,	/* write_optimization_summary */
+ ipa_prop_read_all_agg_replacement,	/* read_optimization_summary */
+ NULL,			 		/* stmt_fixup */
+ 0,					/* TODOs */
+ ipcp_transform_function,		/* function_transform */
+ NULL,					/* variable_transform */
+};
+"""
+        expected = r"""
+class pass_ipa_cp : public ipa_opt_pass_d
+{
+ public:
+  pass_ipa_cp(context &ctxt)
+    : ipa_opt_pass_d(ctxt,
+                   "cp",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_IPA_CONSTANT_PROP,				/* tv_id */
+                   pass_properties(0, 0, 0),
+                   pass_todo_flags(0,
+                                   TODO_dump_symtab |   TODO_remove_functions | TODO_ggc_collect),
+                   0) /* function_transform_todo_flags_start */
+  {}
+
+  bool gate() { return cgraph_gate_cp(); }
+  unsigned int execute() { return ipcp_driver(); }
+
+  void generate_summary() { ipcp_generate_summary (); }
+  void write_summary() { ipcp_write_summary (); }
+  void read_summary() { ipcp_read_summary (); }
+  void write_optimization_summary() { ipa_prop_write_all_agg_replacement (); }
+  void read_optimization_summary() { ipa_prop_read_all_agg_replacement (); }
+  void stmt_fixup(struct cgraph_node *node, gimple *stmt) {
+    NULL (node, stmt);  // FIXME!
+  }
+  unsigned int function_transform(struct cgraph_node *node) {
+    return ipcp_transform_function (node);
+  }
+  void variable_transform(struct varpool_node *node) {
+    NULL (node);  // FIXME!
+  }
+
+};
+
+ipa_opt_pass_d *
+make_pass_ipa_cp (context &ctxt)
+{
+  return new pass_ipa_cp (ctxt);
 }
 """
         self.assertRefactoringEquals(src, expected)
