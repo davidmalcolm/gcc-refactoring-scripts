@@ -57,8 +57,8 @@ pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 PATTERN2 = (
     'struct' + ws + '(?P<passkind>ipa_opt_pass_d)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
-    '(?P<fields>.*)' +
-    '}' + '(?P<extrafields>[^}]*)' + '}' + optws + ';'
+    '(?P<fields>[^}]*)' +
+    '},' + '(?P<extrafields>[^}]*)' + '}' + optws + ';'
 )
 pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
 
@@ -133,8 +133,14 @@ def make_method(d, returntype, name, args):
             # a do-nothing hook:
             body = ''
         else:
-            assert name == 'gate'
-            body = 'return true;'
+            if name == 'gate':
+                body = 'return true;'
+            elif name == 'function_transform':
+                # this returns a "todo_after" which appears to be yet
+                # another set of flags:
+                body = 'return 0;'
+            else:
+                raise ValueError("don't know how to refactor NULL %s" % name)
     else:
         body = ('%s%s (%s);'
                 % (optreturn, existingfn, argusage))

@@ -292,5 +292,153 @@ make_pass_ipa_cp (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_pass_ipa_whole_program_visibility(self):
+        # Ensure regexps aren't too greedy, thus splitting
+        # these two
+        # Also, test of NULL for ipa_opt_pass_d callbacks
+        src = r"""
+struct ipa_opt_pass_d pass_ipa_whole_program_visibility =
+{
+ {
+  IPA_PASS,
+  "whole-program",			/* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_whole_program_function_and_variable_visibility,/* gate */
+  whole_program_function_and_variable_visibility,/* execute */
+  NULL,					/* sub */
+  NULL,					/* next */
+  0,					/* static_pass_number */
+  TV_CGRAPHOPT,				/* tv_id */
+  0,	                                /* properties_required */
+  0,					/* properties_provided */
+  0,					/* properties_destroyed */
+  0,					/* todo_flags_start */
+  TODO_remove_functions | TODO_dump_symtab
+  | TODO_ggc_collect			/* todo_flags_finish */
+ },
+ NULL,					/* generate_summary */
+ NULL,					/* write_summary */
+ NULL,					/* read_summary */
+ NULL,					/* write_optimization_summary */
+ NULL,					/* read_optimization_summary */
+ NULL,					/* stmt_fixup */
+ 0,					/* TODOs */
+ NULL,					/* function_transform */
+ NULL,					/* variable_transform */
+};
+
+/* lots of content here, which should *not* be matched */
+
+struct ipa_opt_pass_d pass_ipa_cdtor_merge =
+{
+ {
+  IPA_PASS,
+  "cdtor",				/* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_ipa_cdtor_merge,			/* gate */
+  ipa_cdtor_merge,		        /* execute */
+  NULL,					/* sub */
+  NULL,					/* next */
+  0,					/* static_pass_number */
+  TV_CGRAPHOPT,			        /* tv_id */
+  0,	                                /* properties_required */
+  0,					/* properties_provided */
+  0,					/* properties_destroyed */
+  0,					/* todo_flags_start */
+  0                                     /* todo_flags_finish */
+ },
+ NULL,				        /* generate_summary */
+ NULL,					/* write_summary */
+ NULL,					/* read_summary */
+ NULL,					/* write_optimization_summary */
+ NULL,					/* read_optimization_summary */
+ NULL,					/* stmt_fixup */
+ 0,					/* TODOs */
+ NULL,			                /* function_transform */
+ NULL					/* variable_transform */
+};
+"""
+        expected = r"""
+class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
+{
+ public:
+  pass_ipa_whole_program_visibility(context &ctxt)
+    : ipa_opt_pass_d(ctxt,
+                   "whole-program",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_CGRAPHOPT,				/* tv_id */
+                   pass_properties(0, 0, 0),
+                   pass_todo_flags(0,
+                                   TODO_remove_functions | TODO_dump_symtab   | TODO_ggc_collect),
+                   0) /* function_transform_todo_flags_start */
+  {}
+
+  /* opt_pass methods: */
+  bool gate() {
+    return gate_whole_program_function_and_variable_visibility ();
+  }
+  unsigned int execute() {
+    return whole_program_function_and_variable_visibility ();
+  }
+
+  /* ipa_opt_pass_d methods: */
+  void generate_summary() { }
+  void write_summary() { }
+  void read_summary() { }
+  void write_optimization_summary() { }
+  void read_optimization_summary() { }
+  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+  unsigned int function_transform(struct cgraph_node *node) { return 0; }
+  void variable_transform(struct varpool_node *node) { }
+
+};
+
+ipa_opt_pass_d *
+make_pass_ipa_whole_program_visibility (context &ctxt)
+{
+  return new pass_ipa_whole_program_visibility (ctxt);
+}
+
+/* lots of content here, which should *not* be matched */
+
+class pass_ipa_cdtor_merge : public ipa_opt_pass_d
+{
+ public:
+  pass_ipa_cdtor_merge(context &ctxt)
+    : ipa_opt_pass_d(ctxt,
+                   "cdtor",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_CGRAPHOPT,				/* tv_id */
+                   pass_properties(0, 0, 0),
+                   pass_todo_flags(0,
+                                   0),
+                   0) /* function_transform_todo_flags_start */
+  {}
+
+  /* opt_pass methods: */
+  bool gate() { return gate_ipa_cdtor_merge (); }
+  unsigned int execute() { return ipa_cdtor_merge (); }
+
+  /* ipa_opt_pass_d methods: */
+  void generate_summary() { }
+  void write_summary() { }
+  void read_summary() { }
+  void write_optimization_summary() { }
+  void read_optimization_summary() { }
+  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+  unsigned int function_transform(struct cgraph_node *node) { return 0; }
+  void variable_transform(struct varpool_node *node) { }
+
+};
+
+ipa_opt_pass_d *
+make_pass_ipa_cdtor_merge (context &ctxt)
+{
+  return new pass_ipa_cdtor_merge (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
+
 if __name__ == '__main__':
     unittest.main()
