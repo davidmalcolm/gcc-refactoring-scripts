@@ -49,8 +49,8 @@ class pass_jump2 : public rtl_opt_pass
                                    TODO_verify_rtl_sharing))
   {}
 
-  bool gate() { return NULL(); }
-  unsigned int execute() { return execute_jump2(); }
+  bool gate() { return NULL (); }
+  unsigned int execute() { return execute_jump2 (); }
 };
 
 rtl_opt_pass *
@@ -100,8 +100,8 @@ class pass_mudflap_1 : public gimple_opt_pass
                                    0))
   {}
 
-  bool gate() { return gate_mudflap(); }
-  unsigned int execute() { return execute_mudflap_function_decls(); }
+  bool gate() { return gate_mudflap (); }
+  unsigned int execute() { return execute_mudflap_function_decls (); }
 };
 
 gimple_opt_pass *
@@ -150,8 +150,8 @@ class pass_mudflap_2 : public gimple_opt_pass
                                    TODO_verify_flow | TODO_verify_stmts   | TODO_update_ssa))
   {}
 
-  bool gate() { return gate_mudflap(); }
-  unsigned int execute() { return execute_mudflap_function_ops(); }
+  bool gate() { return gate_mudflap (); }
+  unsigned int execute() { return execute_mudflap_function_ops (); }
 };
 
 gimple_opt_pass *
@@ -197,8 +197,8 @@ make_pass_mudflap_2 (context &ctxt)
                                    TODO_update_ssa))
   {}
 
-  bool gate() { return gate_ipa_pta(); }
-  unsigned int execute() { return ipa_pta_execute(); }
+  bool gate() { return gate_ipa_pta (); }
+  unsigned int execute() { return ipa_pta_execute (); }
 };
 
 simple_ipa_opt_pass *
@@ -296,8 +296,8 @@ class pass_ipa_cp : public ipa_opt_pass_d
                    0) /* function_transform_todo_flags_start */
   {}
 
-  bool gate() { return cgraph_gate_cp(); }
-  unsigned int execute() { return ipcp_driver(); }
+  bool gate() { return cgraph_gate_cp (); }
+  unsigned int execute() { return ipcp_driver (); }
 
   void generate_summary() { ipcp_generate_summary (); }
   void write_summary() { ipcp_write_summary (); }

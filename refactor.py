@@ -119,12 +119,30 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
+def make_method(d, returntype, name, args):
+    argdecl = ', '.join(['%s%s' % (type_, argname)
+                         for type_, argname in args])
+    argusage = ', '.join([argname
+                         for type_, argname in args])
+    optreturn = 'return ' if returntype != 'void' else ''
+    existingfn = d[name]
+    body = ('%s%s (%s);'
+            % (optreturn, existingfn, argusage))
+    if args:
+        return ('  %s %s(%s) {\n'
+                '    %s\n'
+                '  }\n'
+                % (returntype, name, argdecl, body))
+    else:
+        return ('  %s %s(%s) { %s }\n'
+                % (returntype, name, argdecl, body))
+
 def make_pass_methods(pi):
     d = pi._asdict()
-    return r'''
-  bool gate() { return %(gate)s(); }
-  unsigned int execute() { return %(execute)s(); }
-''' % d
+    s = '\n'
+    s += make_method(d, 'bool', 'gate', () )
+    s += make_method(d, 'unsigned int', 'execute', () )
+    return s
 
 def make_replacement(pi):
     d = pi._asdict()
@@ -150,25 +168,20 @@ def make_replacement2(pi, extra):
   {}
 ''' % d
     s += make_pass_methods(pi)
-    s += r'''
-  void generate_summary() { %(generate_summary)s (); }
-  void write_summary() { %(write_summary)s (); }
-  void read_summary() { %(read_summary)s (); }
-  void write_optimization_summary() { %(write_optimization_summary)s (); }
-  void read_optimization_summary() { %(read_optimization_summary)s (); }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) {
-    %(stmt_fixup)s (node, stmt);
-  }
-  unsigned int function_transform(struct cgraph_node *node) {
-    return %(function_transform)s (node);
-  }
-  void variable_transform(struct varpool_node *node) {
-    %(variable_transform)s (node);
-  }
-
-};
-
-''' % d
+    s += '\n'
+    s += make_method(d, 'void', 'generate_summary', [] )
+    s += make_method(d, 'void', 'write_summary', [] )
+    s += make_method(d, 'void', 'read_summary', [] )
+    s += make_method(d, 'void', 'write_optimization_summary', [] )
+    s += make_method(d, 'void', 'read_optimization_summary', [] )
+    s += make_method(d, 'void', 'stmt_fixup',
+                     [('struct cgraph_node *', 'node'),
+                      ('gimple *', 'stmt')])
+    s += make_method(d, 'unsigned int', 'function_transform',
+                     [('struct cgraph_node *', 'node')])
+    s += make_method(d, 'void', 'variable_transform',
+                     [('struct varpool_node *', 'node')])
+    s += '\n};\n\n'
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
