@@ -244,44 +244,6 @@ struct ipa_opt_pass_d pass_ipa_cp =
 };
 """
         expected = r"""
-"""
-        self.assertRefactoringEquals(src, expected)
-
-    def test_pass_ipa_cp(self):
-        # Test of a ipa_opt_pass_d (from gcc/ipa-cp.c)
-        # struct ipa_opt_pass_d pass_ipa_cp;
-        src = r"""
-struct ipa_opt_pass_d pass_ipa_cp =
-{
- {
-  IPA_PASS,
-  "cp",				/* name */
-  OPTGROUP_NONE,                /* optinfo_flags */
-  cgraph_gate_cp,		/* gate */
-  ipcp_driver,			/* execute */
-  NULL,				/* sub */
-  NULL,				/* next */
-  0,				/* static_pass_number */
-  TV_IPA_CONSTANT_PROP,		/* tv_id */
-  0,				/* properties_required */
-  0,				/* properties_provided */
-  0,				/* properties_destroyed */
-  0,				/* todo_flags_start */
-  TODO_dump_symtab |
-  TODO_remove_functions | TODO_ggc_collect /* todo_flags_finish */
- },
- ipcp_generate_summary,			/* generate_summary */
- ipcp_write_summary,			/* write_summary */
- ipcp_read_summary,			/* read_summary */
- ipa_prop_write_all_agg_replacement,	/* write_optimization_summary */
- ipa_prop_read_all_agg_replacement,	/* read_optimization_summary */
- NULL,			 		/* stmt_fixup */
- 0,					/* TODOs */
- ipcp_transform_function,		/* function_transform */
- NULL,					/* variable_transform */
-};
-"""
-        expected = r"""
 class pass_ipa_cp : public ipa_opt_pass_d
 {
  public:
