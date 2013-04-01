@@ -126,16 +126,30 @@ def make_method(d, returntype, name, args):
                          for type_, argname in args])
     optreturn = 'return ' if returntype != 'void' else ''
     existingfn = d[name]
-    body = ('%s%s (%s);'
-            % (optreturn, existingfn, argusage))
-    if args:
-        return ('  %s %s(%s) {\n'
-                '    %s\n'
-                '  }\n'
-                % (returntype, name, argdecl, body))
+    if existingfn == 'NULL':
+        if returntype == 'void':
+            # Assume a NULL function ptr "returning" void is to become
+            # a do-nothing hook:
+            body = ''
+        else:
+            assert name == 'gate'
+            body = 'return true;'
     else:
-        return ('  %s %s(%s) { %s }\n'
-                % (returntype, name, argdecl, body))
+        body = ('%s%s (%s);'
+                % (optreturn, existingfn, argusage))
+    if body:
+        block = '{ %s }' % body
+    else:
+        block = '{ }'
+    result = ('  %s %s(%s) %s\n'
+                % (returntype, name, argdecl, block))
+    # line-wrap at 76 chars:
+    if len(result) > 76:
+        result = ('  %s %s(%s) {\n'
+                  '    %s\n'
+                  '  }\n'
+                  % (returntype, name, argdecl, body))
+    return result
 
 def make_pass_methods(pi):
     d = pi._asdict()
@@ -195,8 +209,6 @@ def refactor_pass_initializers(src):
             pi = parse_basic_fields(gd)
             replacement = make_replacement(pi)
             src = (src[:m.start()] + replacement + src[m.end():])
-            # FIXME: what about NULL gate?
-            # FIXME: what about NULL execute?
         else:
             m = pattern2.search(src)
             if m:
@@ -205,7 +217,6 @@ def refactor_pass_initializers(src):
                 extra = parse_extra_fields(gd)
                 replacement = make_replacement2(pi, extra)
                 src = (src[:m.start()] + replacement + src[m.end():])
-                # FIXME: what about NULL callbacks?
             else:
                 break
     return src

@@ -49,7 +49,7 @@ class pass_jump2 : public rtl_opt_pass
                                    TODO_verify_rtl_sharing))
   {}
 
-  bool gate() { return NULL (); }
+  bool gate() { return true; }
   unsigned int execute() { return execute_jump2 (); }
 };
 
@@ -302,17 +302,17 @@ class pass_ipa_cp : public ipa_opt_pass_d
   void generate_summary() { ipcp_generate_summary (); }
   void write_summary() { ipcp_write_summary (); }
   void read_summary() { ipcp_read_summary (); }
-  void write_optimization_summary() { ipa_prop_write_all_agg_replacement (); }
-  void read_optimization_summary() { ipa_prop_read_all_agg_replacement (); }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) {
-    NULL (node, stmt);  // FIXME!
+  void write_optimization_summary() {
+    ipa_prop_write_all_agg_replacement ();
   }
+  void read_optimization_summary() {
+    ipa_prop_read_all_agg_replacement ();
+  }
+  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
   unsigned int function_transform(struct cgraph_node *node) {
     return ipcp_transform_function (node);
   }
-  void variable_transform(struct varpool_node *node) {
-    NULL (node);  // FIXME!
-  }
+  void variable_transform(struct varpool_node *node) { }
 
 };
 
