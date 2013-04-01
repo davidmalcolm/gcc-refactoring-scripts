@@ -490,6 +490,20 @@ make_pass_all_optimizations_g (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_factory_fn_decls(self):
+        src = r"""
+extern struct gimple_opt_pass pass_sra;
+extern struct simple_ipa_opt_pass pass_ipa_lower_emutls;
+extern struct ipa_opt_pass_d pass_ipa_whole_program_visibility;
+extern struct rtl_opt_pass pass_cse;
+"""
+        expected = r"""
+extern gimple_opt_pass *make_pass_sra (context &ctxt);
+extern simple_ipa_opt_pass *make_pass_ipa_lower_emutls (context &ctxt);
+extern ipa_opt_pass_d *make_pass_ipa_whole_program_visibility (context &ctxt);
+extern rtl_opt_pass *make_pass_cse (context &ctxt);
+"""
+        self.assertRefactoringEquals(src, expected)
 
 if __name__ == '__main__':
     unittest.main()

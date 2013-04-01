@@ -62,6 +62,9 @@ PATTERN2 = (
 )
 pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
 
+PATTERN3 = ('extern struct (?P<passkind>gimple_opt_pass|simple_ipa_opt_pass|ipa_opt_pass_d|rtl_opt_pass) (?P<passname>pass_\S+);')
+pattern3 = re.compile(PATTERN3)
+
 def clean_field(field):
     # Strip out C comments:
     field = re.sub(r'(/\*.*\*/)', '', field)
@@ -223,16 +226,27 @@ def refactor_pass_initializers(src):
             pi = parse_basic_fields(gd)
             replacement = make_replacement(pi)
             src = (src[:m.start()] + replacement + src[m.end():])
-        else:
-            m = pattern2.search(src)
-            if m:
-                gd = m.groupdict()
-                pi = parse_basic_fields(gd)
-                extra = parse_extra_fields(gd)
-                replacement = make_replacement2(pi, extra)
-                src = (src[:m.start()] + replacement + src[m.end():])
-            else:
-                break
+            continue
+
+        m = pattern2.search(src)
+        if m:
+            gd = m.groupdict()
+            pi = parse_basic_fields(gd)
+            extra = parse_extra_fields(gd)
+            replacement = make_replacement2(pi, extra)
+            src = (src[:m.start()] + replacement + src[m.end():])
+            continue
+
+        m = pattern3.search(src)
+        if m:
+            gd = m.groupdict()
+            replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
+            src = (src[:m.start()] + replacement + src[m.end():])
+            continue
+
+        # no matches:
+        break
+
     return src
 
 def refactor_file(path):
