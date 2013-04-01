@@ -47,7 +47,7 @@ optws = r'\s*'
 PATTERN = (
     'struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
-    '(?P<fields>.*)' +
+    '(?P<fields>[^}]*)' +
     '}' + optws + '}' + optws + ';'
 )
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
@@ -57,7 +57,7 @@ PATTERN2 = (
     'struct' + ws + '(?P<passkind>ipa_opt_pass_d)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
     '(?P<fields>.*)' +
-    '}' + '(?P<extrafields>.*)' + '}' + optws + ';'
+    '}' + '(?P<extrafields>[^}]*)' + '}' + optws + ';'
 )
 pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
 
