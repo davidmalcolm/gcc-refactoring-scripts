@@ -1,36 +1,37 @@
+from collections import namedtuple
 from difflib import unified_diff
 import re
 import sys
 
+FIELDS = ('type',
+          'name',
+          'optinfo_flags',
+          'gate',
+          'execute',
+          'sub',
+          'next',
+          'static_pass_number',
+          'tv_id',
+          'properties_required',
+          'properties_provided',
+          'properties_destroyed',
+          'todo_flags_start',
+          'todo_flags_finish')
+
+class PassInitializer(namedtuple('PassInitializer',
+                                 tuple(['passkind', 'passname'] + list(FIELDS)))):
+    pass
+
 ws = r'\s+'
 optws = r'\s*'
-def make_field(name):
-    return (('(?P<%s>.*),' % name) + optws + "/\* (.*) \*/" + optws)
-
-def make_final_field(name):
-    # trailing comma is optional:
-    return (('(?P<%s>.*),?' % name) + optws + "/\* (.*) \*/" + optws)
 
 PATTERN = (
-    'struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<classname>\S+)' + optws + '=' + optws +
+    'struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
-    '(\S+_PASS),' + optws +
-    make_field('name') +
-    make_field('optinfo_flags') +
-    make_field('gate') +
-    make_field('execute') +
-    make_field('sub') +
-    make_field('next') +
-    make_field('static_pass_number') +
-    make_field('tv_id') +
-    make_field('properties_required') +
-    make_field('properties_provided') +
-    make_field('properties_destroyed') +
-    make_field('todo_flags_start') +
-    make_final_field('todo_flags_finish') +
+    '(?P<fields>.*)' +
     '}' + optws + '}' + optws + ';'
 )
-pattern = re.compile(PATTERN, re.MULTILINE)
+pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
 TEMPLATE = '''class %(classname)s : public %(passkind)s
 {
@@ -59,8 +60,32 @@ def refactor_pass_initializers(src):
     while 1:
         m = pattern.search(src)
         if m:
-            # print(m.groups())
-            d = m.groupdict()
+            gd = m.groupdict()
+            fields = []
+            for field in gd['fields'].split(','):
+                # Strip out C comments:
+                field = re.sub(r'(/\*.*\*/)', '', field)
+                # Strip out leading/trailing whitespace:
+                field = field.strip()
+                field = field.replace('\n', ' ')
+                fields.append(field)
+
+            # Deal with trailing comma:
+            if len(fields) == 15 and fields[14] == '':
+                fields = fields[:14]
+
+            assert len(fields) == 14
+
+            pi = PassInitializer(gd['passkind'],
+                                 gd['passname'],
+                                 *fields)
+            assert pi.sub == 'NULL'
+            assert pi.next == 'NULL'
+            assert pi.static_pass_number == '0'
+
+            d = pi._asdict()
+            d['classname'] = pi.passname
+            #d['passkind'] = pi.passkind
             replacement = TEMPLATE % d
             src = (src[:m.start()] + replacement + src[m.end():])
             # FIXME: what about NULL gate?
