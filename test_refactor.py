@@ -49,6 +49,7 @@ class pass_jump2 : public rtl_opt_pass
                                    TODO_verify_rtl_sharing))
   {}
 
+  /* opt_pass methods: */
   bool gate() { return true; }
   unsigned int execute() { return execute_jump2 (); }
 };
@@ -100,6 +101,7 @@ class pass_mudflap_1 : public gimple_opt_pass
                                    0))
   {}
 
+  /* opt_pass methods: */
   bool gate() { return gate_mudflap (); }
   unsigned int execute() { return execute_mudflap_function_decls (); }
 };
@@ -150,6 +152,7 @@ class pass_mudflap_2 : public gimple_opt_pass
                                    TODO_verify_flow | TODO_verify_stmts   | TODO_update_ssa))
   {}
 
+  /* opt_pass methods: */
   bool gate() { return gate_mudflap (); }
   unsigned int execute() { return execute_mudflap_function_ops (); }
 };
@@ -197,6 +200,7 @@ make_pass_mudflap_2 (context &ctxt)
                                    TODO_update_ssa))
   {}
 
+  /* opt_pass methods: */
   bool gate() { return gate_ipa_pta (); }
   unsigned int execute() { return ipa_pta_execute (); }
 };
@@ -258,9 +262,11 @@ class pass_ipa_cp : public ipa_opt_pass_d
                    0) /* function_transform_todo_flags_start */
   {}
 
+  /* opt_pass methods: */
   bool gate() { return cgraph_gate_cp (); }
   unsigned int execute() { return ipcp_driver (); }
 
+  /* ipa_opt_pass_d methods: */
   void generate_summary() { ipcp_generate_summary (); }
   void write_summary() { ipcp_write_summary (); }
   void read_summary() { ipcp_read_summary (); }

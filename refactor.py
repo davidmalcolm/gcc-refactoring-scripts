@@ -154,6 +154,7 @@ def make_method(d, returntype, name, args):
 def make_pass_methods(pi):
     d = pi._asdict()
     s = '\n'
+    s += '  /* opt_pass methods: */\n'
     s += make_method(d, 'bool', 'gate', () )
     s += make_method(d, 'unsigned int', 'execute', () )
     return s
@@ -183,6 +184,7 @@ def make_replacement2(pi, extra):
 ''' % d
     s += make_pass_methods(pi)
     s += '\n'
+    s += '  /* ipa_opt_pass_d methods: */\n'
     s += make_method(d, 'void', 'generate_summary', [] )
     s += make_method(d, 'void', 'write_summary', [] )
     s += make_method(d, 'void', 'read_summary', [] )
