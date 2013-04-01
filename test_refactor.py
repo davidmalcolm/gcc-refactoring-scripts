@@ -104,7 +104,7 @@ class pass_mudflap_1 : public gimple_opt_pass
   unsigned int execute() { return execute_mudflap_function_decls(); }
 };
 
-rtl_opt_pass *
+gimple_opt_pass *
 make_pass_mudflap_1 (context &ctxt)
 {
   return new pass_mudflap_1 (ctxt);
@@ -154,7 +154,7 @@ class pass_mudflap_2 : public gimple_opt_pass
   unsigned int execute() { return execute_mudflap_function_ops(); }
 };
 
-rtl_opt_pass *
+gimple_opt_pass *
 make_pass_mudflap_2 (context &ctxt)
 {
   return new pass_mudflap_2 (ctxt);

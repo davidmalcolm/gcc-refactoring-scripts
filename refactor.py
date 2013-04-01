@@ -50,7 +50,7 @@ TEMPLATE = '''class %(classname)s : public %(passkind)s
   unsigned int execute() { return %(execute)s(); }
 };
 
-rtl_opt_pass *
+%(passkind)s *
 make_%(classname)s (context &ctxt)
 {
   return new %(classname)s (ctxt);
