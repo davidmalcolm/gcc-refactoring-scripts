@@ -439,6 +439,57 @@ make_pass_ipa_cdtor_merge (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_pass_all_optimizations_g(self):
+        # Example of a pass with a NULL execute
+        # and a "static" qualifier:
+        src = r"""
+static struct gimple_opt_pass pass_all_optimizations_g =
+{
+ {
+  GIMPLE_PASS,
+  "*all_optimizations_g",		/* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_all_optimizations_g,		/* gate */
+  NULL,					/* execute */
+  NULL,					/* sub */
+  NULL,					/* next */
+  0,					/* static_pass_number */
+  TV_OPTIMIZE,				/* tv_id */
+  0,					/* properties_required */
+  0,					/* properties_provided */
+  0,					/* properties_destroyed */
+  0,					/* todo_flags_start */
+  0					/* todo_flags_finish */
+ }
+};
+"""
+        expected = r"""
+class pass_all_optimizations_g : public gimple_opt_pass
+{
+ public:
+  pass_all_optimizations_g(context &ctxt)
+    : gimple_opt_pass(ctxt,
+                   "*all_optimizations_g",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_OPTIMIZE,				/* tv_id */
+                   pass_properties(0, 0, 0),
+                   pass_todo_flags(0,
+                                   0))
+  {}
+
+  /* opt_pass methods: */
+  bool gate() { return gate_all_optimizations_g (); }
+  unsigned int execute() { return 0; }
+};
+
+static gimple_opt_pass *
+make_pass_all_optimizations_g (context &ctxt)
+{
+  return new pass_all_optimizations_g (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
 
 if __name__ == '__main__':
     unittest.main()

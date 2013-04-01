@@ -24,7 +24,7 @@ FIELDS = ('type',
           'todo_flags_finish')
 
 class PassInitializer(namedtuple('PassInitializer',
-                                 tuple(['passkind', 'passname'] + list(FIELDS)))):
+                                 tuple(['static', 'passkind', 'passname'] + list(FIELDS)))):
     pass
 
 EXTRA_FIELDS = (
@@ -46,7 +46,7 @@ ws = r'\s+'
 optws = r'\s*'
 
 PATTERN = (
-    'struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
+    '(?P<static>static )?struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
     '(?P<fields>[^}]*)' +
     '}' + optws + '}' + optws + ';'
@@ -55,7 +55,7 @@ pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
 # struct ipa_opt_pass_d is more complicated due to extra fields at the end:
 PATTERN2 = (
-    'struct' + ws + '(?P<passkind>ipa_opt_pass_d)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
+    '(?P<static>static )?struct' + ws + '(?P<passkind>ipa_opt_pass_d)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
     '(?P<fields>[^}]*)' +
     '},' + '(?P<extrafields>[^}]*)' + '}' + optws + ';'
@@ -79,9 +79,12 @@ def parse_basic_fields(gd):
     if len(fields) == 15 and fields[14] == '':
         fields = fields[:14]
 
+    if len(fields) != 14:
+        print(fields)
     assert len(fields) == 14
 
-    pi = PassInitializer(gd['passkind'],
+    pi = PassInitializer(gd['static'] if gd['static'] else '',
+                         gd['passkind'],
                          gd['passname'],
                          *fields)
     assert pi.sub == 'NULL'
@@ -114,7 +117,7 @@ TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
                    pass_todo_flags(%(todo_flags_start)s,
                                    %(todo_flags_finish)s)'''
 
-TEMPLATE_FACTORY_FUNCTION = '''%(passkind)s *
+TEMPLATE_FACTORY_FUNCTION = '''%(static)s%(passkind)s *
 make_%(classname)s (context &ctxt)
 {
   return new %(classname)s (ctxt);
@@ -135,6 +138,8 @@ def make_method(d, returntype, name, args):
         else:
             if name == 'gate':
                 body = 'return true;'
+            elif name == 'execute':
+                body = 'return 0;'
             elif name == 'function_transform':
                 # this returns a "todo_after" which appears to be yet
                 # another set of flags:
