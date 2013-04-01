@@ -262,7 +262,7 @@ def refactor_file(path):
         sys.stdout.write('%s\n' % line)
 
 if __name__ == '__main__':
-    for path in glob.glob('../src/gcc/*.c'):
+    for path in sorted(glob.glob('../src/gcc/*.[ch]')):
         print(path)
         refactor_file(path)
 
