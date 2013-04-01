@@ -3,6 +3,10 @@ from difflib import unified_diff
 import re
 import sys
 
+############################################################################
+# Parsing input
+############################################################################
+
 FIELDS = ('type',
           'name',
           'optinfo_flags',
@@ -57,69 +61,6 @@ PATTERN2 = (
 )
 pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
 
-TEMPLATE = '''class %(classname)s : public %(passkind)s
-{
- public:
-  %(classname)s(context &ctxt)
-    : %(passkind)s(ctxt,
-                   %(name)s,				/* name */
-                   %(optinfo_flags)s,                   /* optinfo_flags */
-                   %(tv_id)s,				/* tv_id */
-                   pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),
-                   pass_todo_flags(%(todo_flags_start)s,
-                                   %(todo_flags_finish)s))
-  {}
-
-  bool gate() { return %(gate)s(); }
-  unsigned int execute() { return %(execute)s(); }
-};
-
-%(passkind)s *
-make_%(classname)s (context &ctxt)
-{
-  return new %(classname)s (ctxt);
-}'''
-
-TEMPLATE2 = '''class %(classname)s : public %(passkind)s
-{
- public:
-  %(classname)s(context &ctxt)
-    : %(passkind)s(ctxt,
-                   %(name)s,				/* name */
-                   %(optinfo_flags)s,                   /* optinfo_flags */
-                   %(tv_id)s,				/* tv_id */
-                   pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),
-                   pass_todo_flags(%(todo_flags_start)s,
-                                   %(todo_flags_finish)s),
-                   %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
-  {}
-
-  bool gate() { return %(gate)s(); }
-  unsigned int execute() { return %(execute)s(); }
-
-  void generate_summary() { %(generate_summary)s (); }
-  void write_summary() { %(write_summary)s (); }
-  void read_summary() { %(read_summary)s (); }
-  void write_optimization_summary() { %(write_optimization_summary)s (); }
-  void read_optimization_summary() { %(read_optimization_summary)s (); }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) {
-    %(stmt_fixup)s (node, stmt);
-  }
-  unsigned int function_transform(struct cgraph_node *node) {
-    return %(function_transform)s (node);
-  }
-  void variable_transform(struct varpool_node *node) {
-    %(variable_transform)s (node);
-  }
-
-};
-
-%(passkind)s *
-make_%(classname)s (context &ctxt)
-{
-  return new %(classname)s (ctxt);
-}'''
-
 def clean_field(field):
     # Strip out C comments:
     field = re.sub(r'(/\*.*\*/)', '', field)
@@ -156,15 +97,90 @@ def parse_extra_fields(gd):
     extra = ExtraFields(*fields)
     return extra
 
+############################################################################
+# Generating output
+############################################################################
+
+TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
+{
+ public:
+  %(classname)s(context &ctxt)
+    : %(passkind)s(ctxt,
+                   %(name)s,				/* name */
+                   %(optinfo_flags)s,                   /* optinfo_flags */
+                   %(tv_id)s,				/* tv_id */
+                   pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),
+                   pass_todo_flags(%(todo_flags_start)s,
+                                   %(todo_flags_finish)s)'''
+
+TEMPLATE_FACTORY_FUNCTION = '''%(passkind)s *
+make_%(classname)s (context &ctxt)
+{
+  return new %(classname)s (ctxt);
+}'''
+
+def make_pass_methods(pi):
+    d = pi._asdict()
+    return r'''
+  bool gate() { return %(gate)s(); }
+  unsigned int execute() { return %(execute)s(); }
+''' % d
+
+def make_replacement(pi):
+    d = pi._asdict()
+    d['classname'] = pi.passname
+    s = TEMPLATE_START_OF_CLASS % d
+    s += r''')
+  {}
+'''
+    s += make_pass_methods(pi)
+    s += '};\n\n'
+
+    s += TEMPLATE_FACTORY_FUNCTION % d
+
+    return s
+
+def make_replacement2(pi, extra):
+    d = pi._asdict()
+    d.update(extra._asdict())
+    d['classname'] = pi.passname
+    s = TEMPLATE_START_OF_CLASS % d
+    s += r''',
+                   %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
+  {}
+''' % d
+    s += make_pass_methods(pi)
+    s += r'''
+  void generate_summary() { %(generate_summary)s (); }
+  void write_summary() { %(write_summary)s (); }
+  void read_summary() { %(read_summary)s (); }
+  void write_optimization_summary() { %(write_optimization_summary)s (); }
+  void read_optimization_summary() { %(read_optimization_summary)s (); }
+  void stmt_fixup(struct cgraph_node *node, gimple *stmt) {
+    %(stmt_fixup)s (node, stmt);
+  }
+  unsigned int function_transform(struct cgraph_node *node) {
+    return %(function_transform)s (node);
+  }
+  void variable_transform(struct varpool_node *node) {
+    %(variable_transform)s (node);
+  }
+
+};
+
+''' % d
+
+    s += TEMPLATE_FACTORY_FUNCTION % d
+
+    return s
+
 def refactor_pass_initializers(src):
     while 1:
         m = pattern.search(src)
         if m:
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
-            d = pi._asdict()
-            d['classname'] = pi.passname
-            replacement = TEMPLATE % d
+            replacement = make_replacement(pi)
             src = (src[:m.start()] + replacement + src[m.end():])
             # FIXME: what about NULL gate?
             # FIXME: what about NULL execute?
@@ -173,11 +189,8 @@ def refactor_pass_initializers(src):
             if m:
                 gd = m.groupdict()
                 pi = parse_basic_fields(gd)
-                d = pi._asdict()
-                d['classname'] = pi.passname
                 extra = parse_extra_fields(gd)
-                d.update(extra._asdict())
-                replacement = TEMPLATE2 % d
+                replacement = make_replacement2(pi, extra)
                 src = (src[:m.start()] + replacement + src[m.end():])
                 # FIXME: what about NULL callbacks?
             else:
