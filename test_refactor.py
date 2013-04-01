@@ -162,7 +162,52 @@ make_pass_mudflap_2 (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_pass_ipa_pta(self):
+        # Test of a simple_ipa_opt_pass (from gcc/tree-ssa-structalias.c)
+        src = r"""struct simple_ipa_opt_pass pass_ipa_pta =
+{
+ {
+  SIMPLE_IPA_PASS,
+  "pta",		                /* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_ipa_pta,			/* gate */
+  ipa_pta_execute,			/* execute */
+  NULL,					/* sub */
+  NULL,					/* next */
+  0,					/* static_pass_number */
+  TV_IPA_PTA,		        /* tv_id */
+  0,	                                /* properties_required */
+  0,					/* properties_provided */
+  0,					/* properties_destroyed */
+  0,					/* todo_flags_start */
+  TODO_update_ssa                       /* todo_flags_finish */
+ }
+};
+"""
+        expected = r"""class pass_ipa_pta : public simple_ipa_opt_pass
+{
+ public:
+  pass_ipa_pta(context &ctxt)
+    : simple_ipa_opt_pass(ctxt,
+                   "pta",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_IPA_PTA,				/* tv_id */
+                   pass_properties(0, 0, 0),
+                   pass_todo_flags(0,
+                                   TODO_update_ssa))
+  {}
 
+  bool gate() { return gate_ipa_pta(); }
+  unsigned int execute() { return ipa_pta_execute(); }
+};
+
+simple_ipa_opt_pass *
+make_pass_ipa_pta (context &ctxt)
+{
+  return new pass_ipa_pta (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
 
 if __name__ == '__main__':
     unittest.main()
