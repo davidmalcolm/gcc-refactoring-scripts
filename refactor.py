@@ -249,20 +249,26 @@ def refactor_pass_initializers(src):
 
     return src
 
-def refactor_file(path):
+def refactor_file(path, printdiff, applychanges):
     with open(path) as f:
         src = f.read()
     #print(src)
     dst = refactor_pass_initializers(src)
     #print(dst)
 
-    for line in unified_diff(src.splitlines(),
-                             dst.splitlines(),
-                             fromfile=path, tofile=path):
-        sys.stdout.write('%s\n' % line)
+    if printdiff:
+        for line in unified_diff(src.splitlines(),
+                                 dst.splitlines(),
+                                 fromfile=path, tofile=path):
+            sys.stdout.write('%s\n' % line)
+    if applychanges:
+        with open(path, 'w') as f:
+            f.write(dst)
 
 if __name__ == '__main__':
     for path in sorted(glob.glob('../src/gcc/*.[ch]')):
         print(path)
-        refactor_file(path)
+        refactor_file(path,
+                      printdiff=True,
+                      applychanges=True)
 
