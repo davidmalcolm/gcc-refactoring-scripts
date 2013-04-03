@@ -110,7 +110,7 @@ def parse_extra_fields(gd):
 
 TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
 {
- public:
+public:
   %(classname)s(context &ctxt)
     : %(passkind)s(ctxt,
                    %(name)s,				/* name */

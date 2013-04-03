@@ -38,7 +38,7 @@ foo bar
 
 class pass_jump2 : public rtl_opt_pass
 {
- public:
+public:
   pass_jump2(context &ctxt)
     : rtl_opt_pass(ctxt,
                    "jump2",				/* name */
@@ -94,7 +94,7 @@ struct gimple_opt_pass pass_mudflap_1 =
         expected = r"""
 class pass_mudflap_1 : public gimple_opt_pass
 {
- public:
+public:
   pass_mudflap_1(context &ctxt)
     : gimple_opt_pass(ctxt,
                    "mudflap1",				/* name */
@@ -149,7 +149,7 @@ struct gimple_opt_pass pass_mudflap_2 =
         expected = r"""
 class pass_mudflap_2 : public gimple_opt_pass
 {
- public:
+public:
   pass_mudflap_2(context &ctxt)
     : gimple_opt_pass(ctxt,
                    "mudflap2",				/* name */
@@ -201,7 +201,7 @@ make_pass_mudflap_2 (context &ctxt)
 """
         expected = r"""class pass_ipa_pta : public simple_ipa_opt_pass
 {
- public:
+public:
   pass_ipa_pta(context &ctxt)
     : simple_ipa_opt_pass(ctxt,
                    "pta",				/* name */
@@ -266,7 +266,7 @@ struct ipa_opt_pass_d pass_ipa_cp =
         expected = r"""
 class pass_ipa_cp : public ipa_opt_pass_d
 {
- public:
+public:
   pass_ipa_cp(context &ctxt)
     : ipa_opt_pass_d(ctxt,
                    "cp",				/* name */
@@ -395,7 +395,7 @@ struct ipa_opt_pass_d pass_ipa_cdtor_merge =
         expected = r"""
 class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
 {
- public:
+public:
   pass_ipa_whole_program_visibility(context &ctxt)
     : ipa_opt_pass_d(ctxt,
                    "whole-program",				/* name */
@@ -457,7 +457,7 @@ make_pass_ipa_whole_program_visibility (context &ctxt)
 
 class pass_ipa_cdtor_merge : public ipa_opt_pass_d
 {
- public:
+public:
   pass_ipa_cdtor_merge(context &ctxt)
     : ipa_opt_pass_d(ctxt,
                    "cdtor",				/* name */
@@ -540,7 +540,7 @@ static struct gimple_opt_pass pass_all_optimizations_g =
         expected = r"""
 class pass_all_optimizations_g : public gimple_opt_pass
 {
- public:
+public:
   pass_all_optimizations_g(context &ctxt)
     : gimple_opt_pass(ctxt,
                    "*all_optimizations_g",				/* name */
