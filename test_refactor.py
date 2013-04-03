@@ -4,7 +4,7 @@ import unittest
 class Tests(unittest.TestCase):
     def assertRefactoringEquals(self, src, expected):
         actual = refactor_pass_initializers(src)
-        self.maxDiff = 4096
+        self.maxDiff = 8192
         self.assertMultiLineEqual(expected, actual) # 2.7+
 
     def test_pass_jump2(self):
@@ -50,8 +50,12 @@ class pass_jump2 : public rtl_opt_pass
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return false; }
   bool gate() { return true; }
-  unsigned int execute() { return execute_jump2 (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return execute_jump2 (); }
+
 };
 
 rtl_opt_pass *
@@ -102,8 +106,12 @@ class pass_mudflap_1 : public gimple_opt_pass
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return gate_mudflap (); }
-  unsigned int execute() { return execute_mudflap_function_decls (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return execute_mudflap_function_decls (); }
+
 };
 
 gimple_opt_pass *
@@ -153,8 +161,12 @@ class pass_mudflap_2 : public gimple_opt_pass
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return gate_mudflap (); }
-  unsigned int execute() { return execute_mudflap_function_ops (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return execute_mudflap_function_ops (); }
+
 };
 
 gimple_opt_pass *
@@ -201,8 +213,12 @@ make_pass_mudflap_2 (context &ctxt)
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return gate_ipa_pta (); }
-  unsigned int execute() { return ipa_pta_execute (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return ipa_pta_execute (); }
+
 };
 
 simple_ipa_opt_pass *
@@ -263,24 +279,42 @@ class pass_ipa_cp : public ipa_opt_pass_d
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return cgraph_gate_cp (); }
-  unsigned int execute() { return ipcp_driver (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return ipcp_driver (); }
 
   /* ipa_opt_pass_d methods: */
-  void generate_summary() { ipcp_generate_summary (); }
-  void write_summary() { ipcp_write_summary (); }
-  void read_summary() { ipcp_read_summary (); }
-  void write_optimization_summary() {
+  bool has_generate_summary() { return true; }
+  void impl_generate_summary() { ipcp_generate_summary (); }
+
+  bool has_write_summary() { return true; }
+  void impl_write_summary() { ipcp_write_summary (); }
+
+  bool has_read_summary() { return true; }
+  void impl_read_summary() { ipcp_read_summary (); }
+
+  bool has_write_optimization_summary() { return true; }
+  void impl_write_optimization_summary() {
     ipa_prop_write_all_agg_replacement ();
   }
-  void read_optimization_summary() {
+
+  bool has_read_optimization_summary() { return true; }
+  void impl_read_optimization_summary() {
     ipa_prop_read_all_agg_replacement ();
   }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
-  unsigned int function_transform(struct cgraph_node *node) {
+
+  bool has_stmt_fixup() { return false; }
+  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+
+  bool has_function_transform() { return true; }
+  unsigned int impl_function_transform(struct cgraph_node *node) {
     return ipcp_transform_function (node);
   }
-  void variable_transform(struct varpool_node *node) { }
+
+  bool has_variable_transform() { return false; }
+  void impl_variable_transform(struct varpool_node *node) { }
 
 };
 
@@ -374,22 +408,42 @@ class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() {
     return gate_whole_program_function_and_variable_visibility ();
   }
-  unsigned int execute() {
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() {
     return whole_program_function_and_variable_visibility ();
   }
 
   /* ipa_opt_pass_d methods: */
-  void generate_summary() { }
-  void write_summary() { }
-  void read_summary() { }
-  void write_optimization_summary() { }
-  void read_optimization_summary() { }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
-  unsigned int function_transform(struct cgraph_node *node) { return 0; }
-  void variable_transform(struct varpool_node *node) { }
+  bool has_generate_summary() { return false; }
+  void impl_generate_summary() { }
+
+  bool has_write_summary() { return false; }
+  void impl_write_summary() { }
+
+  bool has_read_summary() { return false; }
+  void impl_read_summary() { }
+
+  bool has_write_optimization_summary() { return false; }
+  void impl_write_optimization_summary() { }
+
+  bool has_read_optimization_summary() { return false; }
+  void impl_read_optimization_summary() { }
+
+  bool has_stmt_fixup() { return false; }
+  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+
+  bool has_function_transform() { return false; }
+  unsigned int impl_function_transform(struct cgraph_node *node) {
+    return 0;
+  }
+
+  bool has_variable_transform() { return false; }
+  void impl_variable_transform(struct varpool_node *node) { }
 
 };
 
@@ -416,18 +470,38 @@ class pass_ipa_cdtor_merge : public ipa_opt_pass_d
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return gate_ipa_cdtor_merge (); }
-  unsigned int execute() { return ipa_cdtor_merge (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return ipa_cdtor_merge (); }
 
   /* ipa_opt_pass_d methods: */
-  void generate_summary() { }
-  void write_summary() { }
-  void read_summary() { }
-  void write_optimization_summary() { }
-  void read_optimization_summary() { }
-  void stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
-  unsigned int function_transform(struct cgraph_node *node) { return 0; }
-  void variable_transform(struct varpool_node *node) { }
+  bool has_generate_summary() { return false; }
+  void impl_generate_summary() { }
+
+  bool has_write_summary() { return false; }
+  void impl_write_summary() { }
+
+  bool has_read_summary() { return false; }
+  void impl_read_summary() { }
+
+  bool has_write_optimization_summary() { return false; }
+  void impl_write_optimization_summary() { }
+
+  bool has_read_optimization_summary() { return false; }
+  void impl_read_optimization_summary() { }
+
+  bool has_stmt_fixup() { return false; }
+  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+
+  bool has_function_transform() { return false; }
+  unsigned int impl_function_transform(struct cgraph_node *node) {
+    return 0;
+  }
+
+  bool has_variable_transform() { return false; }
+  void impl_variable_transform(struct varpool_node *node) { }
 
 };
 
@@ -478,8 +552,12 @@ class pass_all_optimizations_g : public gimple_opt_pass
   {}
 
   /* opt_pass methods: */
+  bool has_gate() { return true; }
   bool gate() { return gate_all_optimizations_g (); }
-  unsigned int execute() { return 0; }
+
+  bool has_execute() { return false; }
+  unsigned int impl_execute() { return 0; }
+
 };
 
 static gimple_opt_pass *

@@ -126,32 +126,9 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
-def make_method(d, returntype, name, args):
+def make_method(returntype, name, args, body):
     argdecl = ', '.join(['%s%s' % (type_, argname)
                          for type_, argname in args])
-    argusage = ', '.join([argname
-                         for type_, argname in args])
-    optreturn = 'return ' if returntype != 'void' else ''
-    existingfn = d[name]
-    if existingfn == 'NULL':
-        if returntype == 'void':
-            # Assume a NULL function ptr "returning" void is to become
-            # a do-nothing hook:
-            body = ''
-        else:
-            if name == 'gate':
-                body = 'return true;'
-            elif name == 'execute':
-                body = 'return 0;'
-            elif name == 'function_transform':
-                # this returns a "todo_after" which appears to be yet
-                # another set of flags:
-                body = 'return 0;'
-            else:
-                raise ValueError("don't know how to refactor NULL %s" % name)
-    else:
-        body = ('%s%s (%s);'
-                % (optreturn, existingfn, argusage))
     if body:
         block = '{ %s }' % body
     else:
@@ -166,12 +143,56 @@ def make_method(d, returntype, name, args):
                   % (returntype, name, argdecl, body))
     return result
 
+def make_method_pair(d, returntype, name, args):
+    """
+    The pre-existing code has plenty of places where a pass' callback fn
+    is compared against NULL.  I believe that there isn't a portable way
+    to do this for a C++ vfunc, so each callback becomes *two* vtable
+    entries:
+       bool has_FOO()   // equivalent to (pass->FOO != NULL) in old code
+    and
+       impl_FOO()       // equivalent to (pass->FOO ()) in old code
+    """
+    existingfn = d[name]
+    if existingfn == 'NULL':
+        body_of_has = 'return false;'
+        if returntype == 'void':
+            # Assume a NULL function ptr "returning" void is to become
+            # a do-nothing hook:
+            body_of_impl = ''
+        else:
+            if name == 'gate':
+                body_of_impl = 'return true;'
+            elif name == 'execute':
+                body_of_impl = 'return 0;'
+            elif name == 'function_transform':
+                # this returns a "todo_after" which appears to be yet
+                # another set of flags:
+                body_of_impl = 'return 0;'
+            else:
+                raise ValueError("don't know how to refactor NULL %s" % name)
+    else:
+        body_of_has = 'return true;'
+
+        optreturn = 'return ' if returntype != 'void' else ''
+        argusage = ', '.join([argname
+                              for type_, argname in args])
+        body_of_impl = ('%s%s (%s);'
+                        % (optreturn, existingfn, argusage))
+
+    s = make_method('bool', 'has_%s' % name, [], body_of_has)
+    s += make_method(returntype,
+                     'gate' if name == 'gate' else ('impl_%s' % name),
+                     args, body_of_impl)
+    s += '\n'
+    return s
+
 def make_pass_methods(pi):
     d = pi._asdict()
     s = '\n'
     s += '  /* opt_pass methods: */\n'
-    s += make_method(d, 'bool', 'gate', () )
-    s += make_method(d, 'unsigned int', 'execute', () )
+    s += make_method_pair(d, 'bool', 'gate', () )
+    s += make_method_pair(d, 'unsigned int', 'execute', () )
     return s
 
 def make_replacement(pi):
@@ -198,21 +219,20 @@ def make_replacement2(pi, extra):
   {}
 ''' % d
     s += make_pass_methods(pi)
-    s += '\n'
     s += '  /* ipa_opt_pass_d methods: */\n'
-    s += make_method(d, 'void', 'generate_summary', [] )
-    s += make_method(d, 'void', 'write_summary', [] )
-    s += make_method(d, 'void', 'read_summary', [] )
-    s += make_method(d, 'void', 'write_optimization_summary', [] )
-    s += make_method(d, 'void', 'read_optimization_summary', [] )
-    s += make_method(d, 'void', 'stmt_fixup',
-                     [('struct cgraph_node *', 'node'),
-                      ('gimple *', 'stmt')])
-    s += make_method(d, 'unsigned int', 'function_transform',
-                     [('struct cgraph_node *', 'node')])
-    s += make_method(d, 'void', 'variable_transform',
-                     [('struct varpool_node *', 'node')])
-    s += '\n};\n\n'
+    s += make_method_pair(d, 'void', 'generate_summary', [] )
+    s += make_method_pair(d, 'void', 'write_summary', [] )
+    s += make_method_pair(d, 'void', 'read_summary', [] )
+    s += make_method_pair(d, 'void', 'write_optimization_summary', [] )
+    s += make_method_pair(d, 'void', 'read_optimization_summary', [] )
+    s += make_method_pair(d, 'void', 'stmt_fixup',
+                          [('struct cgraph_node *', 'node'),
+                           ('gimple *', 'stmt')])
+    s += make_method_pair(d, 'unsigned int', 'function_transform',
+                          [('struct cgraph_node *', 'node')])
+    s += make_method_pair(d, 'void', 'variable_transform',
+                          [('struct varpool_node *', 'node')])
+    s += '};\n\n'
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
