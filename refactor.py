@@ -126,9 +126,13 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
-def make_method(returntype, name, args, body):
-    argdecl = ', '.join(['%s%s' % (type_, argname)
-                         for type_, argname in args])
+def make_method(returntype, name, args, body, uses_args):
+    if uses_args:
+        argdecl = ', '.join(['%s%s' % (type_, argname)
+                             for type_, argname in args])
+    else:
+        argdecl = ', '.join([type_
+                             for type_, argname in args])
     if body:
         block = '{ %s }' % body
     else:
@@ -171,6 +175,7 @@ def make_method_pair(d, returntype, name, args):
                 body_of_impl = 'return 0;'
             else:
                 raise ValueError("don't know how to refactor NULL %s" % name)
+        impl_uses_args = False
     else:
         body_of_has = 'return true;'
 
@@ -179,11 +184,12 @@ def make_method_pair(d, returntype, name, args):
                               for type_, argname in args])
         body_of_impl = ('%s%s (%s);'
                         % (optreturn, existingfn, argusage))
+        impl_uses_args = True
 
-    s = make_method('bool', 'has_%s' % name, [], body_of_has)
+    s = make_method('bool', 'has_%s' % name, [], body_of_has, uses_args=False)
     s += make_method(returntype,
                      'gate' if name == 'gate' else ('impl_%s' % name),
-                     args, body_of_impl)
+                     args, body_of_impl, impl_uses_args)
     s += '\n'
     return s
 

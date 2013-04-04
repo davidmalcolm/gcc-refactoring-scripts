@@ -306,7 +306,7 @@ public:
   }
 
   bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
 
   bool has_function_transform() { return true; }
   unsigned int impl_function_transform(struct cgraph_node *node) {
@@ -314,7 +314,7 @@ public:
   }
 
   bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *node) { }
+  void impl_variable_transform(struct varpool_node *) { }
 
 };
 
@@ -435,15 +435,13 @@ public:
   void impl_read_optimization_summary() { }
 
   bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
 
   bool has_function_transform() { return false; }
-  unsigned int impl_function_transform(struct cgraph_node *node) {
-    return 0;
-  }
+  unsigned int impl_function_transform(struct cgraph_node *) { return 0; }
 
   bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *node) { }
+  void impl_variable_transform(struct varpool_node *) { }
 
 };
 
@@ -493,15 +491,13 @@ public:
   void impl_read_optimization_summary() { }
 
   bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *node, gimple *stmt) { }
+  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
 
   bool has_function_transform() { return false; }
-  unsigned int impl_function_transform(struct cgraph_node *node) {
-    return 0;
-  }
+  unsigned int impl_function_transform(struct cgraph_node *) { return 0; }
 
   bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *node) { }
+  void impl_variable_transform(struct varpool_node *) { }
 
 };
 
