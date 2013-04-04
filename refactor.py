@@ -49,7 +49,7 @@ PATTERN = (
     '(?P<static>static )?struct' + ws + '(?P<passkind>\S+_opt_pass)' + ws +r'(?P<passname>\S+)' + optws + '=' + optws +
     '{' + optws + '{' + optws +
     '(?P<fields>[^}]*)' +
-    '}' + optws + '}' + optws + ';'
+    '}' +',?' + optws + '}' + optws + ';'
 )
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 

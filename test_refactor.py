@@ -564,6 +564,62 @@ make_pass_all_optimizations_g (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_pass_ipa_tm(self):
+        # This wasn't matched due to trailing comma:
+        src = r"""
+
+struct simple_ipa_opt_pass pass_ipa_tm =
+{
+ {
+  SIMPLE_IPA_PASS,
+  "tmipa",				/* name */
+  OPTGROUP_NONE,                        /* optinfo_flags */
+  gate_tm,				/* gate */
+  ipa_tm_execute,			/* execute */
+  NULL,					/* sub */
+  NULL,					/* next */
+  0,					/* static_pass_number */
+  TV_TRANS_MEM,				/* tv_id */
+  PROP_ssa | PROP_cfg,			/* properties_required */
+  0,			                /* properties_provided */
+  0,					/* properties_destroyed */
+  0,					/* todo_flags_start */
+  0,					/* todo_flags_finish */
+ },
+};
+"""
+        expected = r"""
+
+class pass_ipa_tm : public simple_ipa_opt_pass
+{
+public:
+  pass_ipa_tm(context &ctxt)
+    : simple_ipa_opt_pass(ctxt,
+                   "tmipa",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_TRANS_MEM,				/* tv_id */
+                   pass_properties(PROP_ssa | PROP_cfg, 0, 0),
+                   pass_todo_flags(0,
+                                   0))
+  {}
+
+  /* opt_pass methods: */
+  bool has_gate() { return true; }
+  bool gate() { return gate_tm (); }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return ipa_tm_execute (); }
+
+};
+
+simple_ipa_opt_pass *
+make_pass_ipa_tm (context &ctxt)
+{
+  return new pass_ipa_tm (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
     def test_factory_fn_decls(self):
         src = r"""
 extern struct gimple_opt_pass pass_sra;
