@@ -287,7 +287,7 @@ def refactor_file(path, printdiff, applychanges):
                                  dst.splitlines(),
                                  fromfile=path, tofile=path):
             sys.stdout.write('%s\n' % line)
-    if applychanges:
+    if applychanges and src != dst:
         with open(path, 'w') as f:
             f.write(dst)
 
