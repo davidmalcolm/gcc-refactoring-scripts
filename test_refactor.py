@@ -620,6 +620,64 @@ make_pass_ipa_tm (context &ctxt)
 """
         self.assertRefactoringEquals(src, expected)
 
+    def test_0_callback(self):
+        # Ensure that 0 can be used as a synonym for NULL
+        # (here within the gate callback):
+        src = r"""
+struct gimple_opt_pass pass_lower_complex =
+{
+ {
+  GIMPLE_PASS,
+  "cplxlower",                         /* name */
+  OPTGROUP_NONE,                       /* optinfo_flags */
+  0,                                   /* gate */
+  tree_lower_complex,                  /* execute */
+  NULL,                                        /* sub */
+  NULL,                                        /* next */
+  0,                                   /* static_pass_number */
+  TV_NONE,                             /* tv_id */
+  PROP_ssa,                            /* properties_required */
+  PROP_gimple_lcx,                     /* properties_provided */
+  0,                                   /* properties_destroyed */
+  0,                                   /* todo_flags_start */
+    TODO_ggc_collect
+    | TODO_update_ssa
+    | TODO_verify_stmts                        /* todo_flags_finish */
+ }
+};
+"""
+        expected = r"""
+class pass_lower_complex : public gimple_opt_pass
+{
+public:
+  pass_lower_complex(context &ctxt)
+    : gimple_opt_pass(ctxt,
+                   "cplxlower",				/* name */
+                   OPTGROUP_NONE,                   /* optinfo_flags */
+                   TV_NONE,				/* tv_id */
+                   pass_properties(PROP_ssa, PROP_gimple_lcx, 0),
+                   pass_todo_flags(0,
+                                   TODO_ggc_collect     | TODO_update_ssa     | TODO_verify_stmts))
+  {}
+
+  /* opt_pass methods: */
+  bool has_gate() { return false; }
+  bool gate() { return true; }
+
+  bool has_execute() { return true; }
+  unsigned int impl_execute() { return tree_lower_complex (); }
+
+};
+
+gimple_opt_pass *
+make_pass_lower_complex (context &ctxt)
+{
+  return new pass_lower_complex (ctxt);
+}
+"""
+        self.assertRefactoringEquals(src, expected)
+
+
     def test_factory_fn_decls(self):
         src = r"""
 extern struct gimple_opt_pass pass_sra;

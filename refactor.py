@@ -158,7 +158,7 @@ def make_method_pair(d, returntype, name, args):
        impl_FOO()       // equivalent to (pass->FOO ()) in old code
     """
     existingfn = d[name]
-    if existingfn == 'NULL':
+    if existingfn in ('NULL', '0'):
         body_of_has = 'return false;'
         if returntype == 'void':
             # Assume a NULL function ptr "returning" void is to become
