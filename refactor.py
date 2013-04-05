@@ -1,6 +1,6 @@
 from collections import namedtuple
 from difflib import unified_diff
-import glob
+import os
 import re
 import sys
 
@@ -292,9 +292,14 @@ def refactor_file(path, printdiff, applychanges):
             f.write(dst)
 
 if __name__ == '__main__':
-    for path in sorted(glob.glob('../src/gcc/*.[ch]')):
-        print(path)
-        refactor_file(path,
-                      printdiff=True,
-                      applychanges=True)
-
+    def visit(arg, dirname, names):
+        for name in sorted(names):
+            path = os.path.join(dirname, name)
+            if os.path.isfile(path) \
+                    and (path.endswith('.c') or
+                         path.endswith('.h')):
+                print(path)
+                refactor_file(path,
+                              printdiff=True,
+                              applychanges=True)
+    os.path.walk('../src/gcc', visit, None)
