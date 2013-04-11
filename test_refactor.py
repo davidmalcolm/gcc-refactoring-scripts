@@ -2,10 +2,13 @@ from refactor import refactor_pass_initializers
 import unittest
 
 class Tests(unittest.TestCase):
-    def assertRefactoringEquals(self, src, expected):
-        actual = refactor_pass_initializers(src)
+    def assertRefactoringEquals(self,
+                                src, filename,
+                                expected_code, expected_changelog):
+        actual_code, actual_changelog = refactor_pass_initializers(filename, src)
         self.maxDiff = 8192
-        self.assertMultiLineEqual(expected, actual) # 2.7+
+        self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
+        self.assertMultiLineEqual(expected_changelog, actual_changelog) # 2.7+
 
     def test_pass_jump2(self):
         src = r"""
@@ -33,7 +36,7 @@ struct rtl_opt_pass pass_jump2 =
 
 baz qux
 """
-        expected = r"""
+        expected_code = r"""
 foo bar
 
 class pass_jump2 : public rtl_opt_pass
@@ -66,7 +69,14 @@ make_pass_jump2 (context &ctxt)
 
 baz qux
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* cfgcleanup.c (struct rtl_opt_pass pass_jump2): convert from a global\n'
+             '\tstruct to a subclass of rtl_opt_pass\n'
+             '\t(make_pass_jump2): New function to create an instance of the new class\n'
+             '\tpass_jump2\n')
+
+        self.assertRefactoringEquals(src, 'cfgcleanup.c',
+                                     expected_code, expected_changelog)
 
 
     def test_pass_mudflap1(self):
@@ -91,7 +101,7 @@ struct gimple_opt_pass pass_mudflap_1 =
  }
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_mudflap_1 : public gimple_opt_pass
 {
 public:
@@ -120,7 +130,14 @@ make_pass_mudflap_1 (context &ctxt)
   return new pass_mudflap_1 (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_1): convert from\n'
+             '\ta global struct to a subclass of gimple_opt_pass\n'
+             '\t(make_pass_mudflap_1): New function to create an instance of the new\n'
+             '\tclass pass_mudflap_1\n')
+
+        self.assertRefactoringEquals(src, 'tree-mudflap.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_mudflap2(self):
         # This one has non-trivial properties and flags
@@ -146,7 +163,7 @@ struct gimple_opt_pass pass_mudflap_2 =
  }
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_mudflap_2 : public gimple_opt_pass
 {
 public:
@@ -175,7 +192,14 @@ make_pass_mudflap_2 (context &ctxt)
   return new pass_mudflap_2 (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_2): convert from\n'
+             '\ta global struct to a subclass of gimple_opt_pass\n'
+             '\t(make_pass_mudflap_2): New function to create an instance of the new\n'
+             '\tclass pass_mudflap_2\n')
+
+        self.assertRefactoringEquals(src, 'tree-mudflap.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_ipa_pta(self):
         # Test of a simple_ipa_opt_pass (from gcc/tree-ssa-structalias.c)
@@ -199,7 +223,7 @@ make_pass_mudflap_2 (context &ctxt)
  }
 };
 """
-        expected = r"""class pass_ipa_pta : public simple_ipa_opt_pass
+        expected_code = r"""class pass_ipa_pta : public simple_ipa_opt_pass
 {
 public:
   pass_ipa_pta(context &ctxt)
@@ -227,7 +251,14 @@ make_pass_ipa_pta (context &ctxt)
   return new pass_ipa_pta (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* tree-ssa-structalias.c (struct simple_ipa_opt_pass pass_ipa_pta):\n'
+             '\tconvert from a global struct to a subclass of simple_ipa_opt_pass\n'
+             '\t(make_pass_ipa_pta): New function to create an instance of the new\n'
+             '\tclass pass_ipa_pta\n')
+
+        self.assertRefactoringEquals(src, 'tree-ssa-structalias.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_ipa_cp(self):
         # Test of a ipa_opt_pass_d (from gcc/ipa-cp.c)
@@ -263,7 +294,7 @@ struct ipa_opt_pass_d pass_ipa_cp =
  NULL,					/* variable_transform */
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_ipa_cp : public ipa_opt_pass_d
 {
 public:
@@ -324,7 +355,14 @@ make_pass_ipa_cp (context &ctxt)
   return new pass_ipa_cp (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* ipa-cp.c (struct ipa_opt_pass_d pass_ipa_cp): convert from a global\n'
+             '\tstruct to a subclass of ipa_opt_pass_d\n'
+             '\t(make_pass_ipa_cp): New function to create an instance of the new\n'
+             '\tclass pass_ipa_cp\n')
+
+        self.assertRefactoringEquals(src, 'ipa-cp.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_ipa_whole_program_visibility(self):
         # Ensure regexps aren't too greedy, thus splitting
@@ -392,7 +430,7 @@ struct ipa_opt_pass_d pass_ipa_cdtor_merge =
  NULL					/* variable_transform */
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
 {
 public:
@@ -507,7 +545,18 @@ make_pass_ipa_cdtor_merge (context &ctxt)
   return new pass_ipa_cdtor_merge (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* ipa.c (struct ipa_opt_pass_d pass_ipa_whole_program_visibility):\n'
+             '\tconvert from a global struct to a subclass of ipa_opt_pass_d\n'
+             '\t(make_pass_ipa_whole_program_visibility): New function to create an\n'
+             '\tinstance of the new class pass_ipa_whole_program_visibility\n'
+             '\t(struct ipa_opt_pass_d pass_ipa_cdtor_merge): convert from a global\n'
+             '\tstruct to a subclass of ipa_opt_pass_d\n'
+             '\t(make_pass_ipa_cdtor_merge): New function to create an instance of the\n'
+             '\tnew class pass_ipa_cdtor_merge\n')
+
+        self.assertRefactoringEquals(src, 'ipa.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_all_optimizations_g(self):
         # Example of a pass with a NULL execute
@@ -533,7 +582,7 @@ static struct gimple_opt_pass pass_all_optimizations_g =
  }
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_all_optimizations_g : public gimple_opt_pass
 {
 public:
@@ -562,7 +611,14 @@ make_pass_all_optimizations_g (context &ctxt)
   return new pass_all_optimizations_g (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* passes.c (struct gimple_opt_pass pass_all_optimizations_g): convert\n'
+             '\tfrom a global struct to a subclass of gimple_opt_pass\n'
+             '\t(make_pass_all_optimizations_g): New function to create an instance of\n'
+             '\tthe new class pass_all_optimizations_g\n')
+
+        self.assertRefactoringEquals(src, 'passes.c',
+                                     expected_code, expected_changelog)
 
     def test_pass_ipa_tm(self):
         # This wasn't matched due to trailing comma:
@@ -588,7 +644,7 @@ struct simple_ipa_opt_pass pass_ipa_tm =
  },
 };
 """
-        expected = r"""
+        expected_code = r"""
 
 class pass_ipa_tm : public simple_ipa_opt_pass
 {
@@ -618,7 +674,14 @@ make_pass_ipa_tm (context &ctxt)
   return new pass_ipa_tm (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* trans-mem.c (struct simple_ipa_opt_pass pass_ipa_tm): convert from a\n'
+             '\tglobal struct to a subclass of simple_ipa_opt_pass\n'
+             '\t(make_pass_ipa_tm): New function to create an instance of the new\n'
+             '\tclass pass_ipa_tm\n')
+
+        self.assertRefactoringEquals(src, 'trans-mem.c',
+                                     expected_code, expected_changelog)
 
     def test_0_callback(self):
         # Ensure that 0 can be used as a synonym for NULL
@@ -646,7 +709,7 @@ struct gimple_opt_pass pass_lower_complex =
  }
 };
 """
-        expected = r"""
+        expected_code = r"""
 class pass_lower_complex : public gimple_opt_pass
 {
 public:
@@ -675,7 +738,14 @@ make_pass_lower_complex (context &ctxt)
   return new pass_lower_complex (ctxt);
 }
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = \
+            ('\t* tree-complex.c (struct gimple_opt_pass pass_lower_complex): convert\n'
+             '\tfrom a global struct to a subclass of gimple_opt_pass\n'
+             '\t(make_pass_lower_complex): New function to create an instance of the\n'
+             '\tnew class pass_lower_complex\n')
+
+        self.assertRefactoringEquals(src, 'tree-complex.c',
+                                     expected_code, expected_changelog)
 
 
     def test_factory_fn_decls(self):
@@ -685,13 +755,23 @@ extern struct simple_ipa_opt_pass pass_ipa_lower_emutls;
 extern struct ipa_opt_pass_d pass_ipa_whole_program_visibility;
 extern struct rtl_opt_pass pass_cse;
 """
-        expected = r"""
+        expected_code = r"""
 extern gimple_opt_pass *make_pass_sra (context &ctxt);
 extern simple_ipa_opt_pass *make_pass_ipa_lower_emutls (context &ctxt);
 extern ipa_opt_pass_d *make_pass_ipa_whole_program_visibility (context &ctxt);
 extern rtl_opt_pass *make_pass_cse (context &ctxt);
 """
-        self.assertRefactoringEquals(src, expected)
+        expected_changelog = ('\t* tree-pass.h (struct gimple_opt_pass pass_sra): replace declaration\n'
+                              '\twith that of new function make_pass_sra\n'
+                              '\t(struct simple_ipa_opt_pass pass_ipa_lower_emutls): replace\n'
+                              '\tdeclaration with that of new function make_pass_ipa_lower_emutls\n'
+                              '\t(struct ipa_opt_pass_d pass_ipa_whole_program_visibility): replace\n'
+                              '\tdeclaration with that of new function\n'
+                              '\tmake_pass_ipa_whole_program_visibility\n'
+                              '\t(struct rtl_opt_pass pass_cse): replace declaration with that of new\n'
+                              '\tfunction make_pass_cse\n')
+        self.assertRefactoringEquals(src, "tree-pass.h",
+                                     expected_code, expected_changelog)
 
 if __name__ == '__main__':
     unittest.main()

@@ -1,8 +1,10 @@
 from collections import namedtuple
+from datetime import date
 from difflib import unified_diff
 import os
 import re
 import sys
+from textwrap import wrap
 
 ############################################################################
 # Parsing input
@@ -126,6 +128,9 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
+TEMPLATE_CLOG = ('(struct %(passkind)s %(classname)s): convert from a global struct to a subclass of %(passkind)s\n'
+                 '(make_%(classname)s): New function to create an instance of the new class %(classname)s\n')
+
 def make_method(returntype, name, args, body, uses_args):
     if uses_args:
         argdecl = ', '.join(['%s%s' % (type_, argname)
@@ -213,7 +218,9 @@ def make_replacement(pi):
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
-    return s
+    clog = TEMPLATE_CLOG % d
+
+    return s, clog
 
 def make_replacement2(pi, extra):
     d = pi._asdict()
@@ -242,15 +249,43 @@ def make_replacement2(pi, extra):
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
-    return s
+    clog = TEMPLATE_CLOG % d
 
-def refactor_pass_initializers(src):
+    return s, clog
+
+class Changelog:
+    def __init__(self, filename):
+        self.filename = filename
+        self.content = ''
+
+    def append(self, text):
+        assert text.endswith('\n')
+        if self.content == '':
+            self.content += self._wrap('* %s %s' % (self.filename, text))
+        else:
+            self.content += self._wrap('%s' % text)
+        assert self.content.endswith('\n')
+
+    def _wrap(self, text):
+        """
+        Word-wrap (to 70 columns) then add leading tab
+        """
+        result = ''
+        for line in text.splitlines():
+            result += '\n'.join(['\t%s' % wl
+                                 for wl in wrap(line)])
+            result += '\n'
+        return result
+
+def refactor_pass_initializers(filename, src):
+    changelog = Changelog(filename)
     while 1:
         m = pattern.search(src)
         if m:
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
-            replacement = make_replacement(pi)
+            replacement, clog = make_replacement(pi)
+            changelog.append(clog)
             src = (src[:m.start()] + replacement + src[m.end():])
             continue
 
@@ -259,7 +294,8 @@ def refactor_pass_initializers(src):
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
             extra = parse_extra_fields(gd)
-            replacement = make_replacement2(pi, extra)
+            replacement, clog = make_replacement2(pi, extra)
+            changelog.append(clog)
             src = (src[:m.start()] + replacement + src[m.end():])
             continue
 
@@ -267,19 +303,23 @@ def refactor_pass_initializers(src):
         if m:
             gd = m.groupdict()
             replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
+            clog = '(struct %(passkind)s %(passname)s): replace declaration with that of new function make_%(passname)s\n' % gd
+            changelog.append(clog)
             src = (src[:m.start()] + replacement + src[m.end():])
             continue
 
         # no matches:
         break
 
-    return src
+    return src, changelog.content
 
 def refactor_file(path, printdiff, applychanges):
     with open(path) as f:
         src = f.read()
     #print(src)
-    dst = refactor_pass_initializers(src)
+    assert path.startswith('../src/gcc/')
+    filename = path[len('../src/gcc/'):]
+    dst, changelog = refactor_pass_initializers(filename, src)
     #print(dst)
 
     if printdiff:
@@ -291,15 +331,36 @@ def refactor_file(path, printdiff, applychanges):
         with open(path, 'w') as f:
             f.write(dst)
 
+    return changelog
+
+class Author(namedtuple('Author', ('name', 'email'))):
+    pass
+
+def add_to_changelog(filename, author, entry):
+    with open(filename, 'r') as f:
+        old_contents = f.read()
+    today = date.today()
+    header = '%s  %s  <%s>' % (today.isoformat(),
+                               author.name,
+                               author.email)
+    new_contents = header + '\n\n' + entry + '\n' + old_contents
+    with open(filename, 'w') as f:
+        f.write(new_contents)
+
 if __name__ == '__main__':
+    AUTHOR = Author('David Malcolm', 'dmalcolm@redhat.com')
+    clog_entry = ''
     def visit(arg, dirname, names):
+        global clog_entry
         for name in sorted(names):
             path = os.path.join(dirname, name)
             if os.path.isfile(path) \
                     and (path.endswith('.c') or
                          path.endswith('.h')):
                 print(path)
-                refactor_file(path,
-                              printdiff=True,
-                              applychanges=True)
+                clog_entry += refactor_file(path,
+                                           printdiff=True,
+                                           applychanges=True)
     os.path.walk('../src/gcc', visit, None)
+    print(clog_entry)
+    add_to_changelog('../src/gcc/ChangeLog', AUTHOR, clog_entry)
