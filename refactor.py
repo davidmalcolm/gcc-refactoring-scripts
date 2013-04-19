@@ -115,13 +115,19 @@ TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
 {
 public:
   %(classname)s(context &ctxt)
-    : %(passkind)s(ctxt,
-                   %(name)s,
-                   %(optinfo_flags)s,
-                   %(tv_id)s,
-                   pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),
-                   pass_todo_flags(%(todo_flags_start)s,
-                                   %(todo_flags_finish)s)'''
+'''
+
+def finish_pass_constructor(d):
+    s = '    : %(passkind)s(' % d
+    indent = ' ' * len(s)
+    s += 'ctxt,\n'
+    s += indent + '%(name)s,\n' % d
+    s += indent + '%(optinfo_flags)s,\n' % d
+    s += indent + '%(tv_id)s,\n' % d
+    s += indent + 'pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),\n' % d
+    s += indent + 'pass_todo_flags(%(todo_flags_start)s,\n' % d
+    s += indent + '                %(todo_flags_finish)s)' % d
+    return s
 
 TEMPLATE_FACTORY_FUNCTION = '''%(static)s%(passkind)s *
 make_%(classname)s (context &ctxt)
@@ -211,6 +217,7 @@ def make_replacement(pi):
     d = pi._asdict()
     d['classname'] = pi.passname
     s = TEMPLATE_START_OF_CLASS % d
+    s += finish_pass_constructor(d)
     s += r''')
   {}
 '''
@@ -228,8 +235,9 @@ def make_replacement2(pi, extra):
     d.update(extra._asdict())
     d['classname'] = pi.passname
     s = TEMPLATE_START_OF_CLASS % d
+    s += finish_pass_constructor(d)
     s += r''',
-                   %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
+                     %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
   {}
 ''' % d
     s += make_pass_methods(pi)
