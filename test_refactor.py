@@ -176,7 +176,7 @@ public:
                       TV_NONE,
                       pass_properties(PROP_ssa | PROP_cfg | PROP_gimple_leh, 0, 0),
                       pass_todo_flags(0,
-                                      TODO_verify_flow | TODO_verify_stmts   | TODO_update_ssa))
+                                      TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa))
   {}
 
   /* opt_pass methods: */
@@ -307,7 +307,7 @@ public:
                      TV_IPA_CONSTANT_PROP,
                      pass_properties(0, 0, 0),
                      pass_todo_flags(0,
-                                     TODO_dump_symtab |   TODO_remove_functions | TODO_ggc_collect),
+                                     TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect),
                      0) /* function_transform_todo_flags_start */
   {}
 
@@ -443,7 +443,7 @@ public:
                      TV_CGRAPHOPT,
                      pass_properties(0, 0, 0),
                      pass_todo_flags(0,
-                                     TODO_remove_functions | TODO_dump_symtab   | TODO_ggc_collect),
+                                     TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect),
                      0) /* function_transform_todo_flags_start */
   {}
 
@@ -722,7 +722,7 @@ public:
                       TV_NONE,
                       pass_properties(PROP_ssa, PROP_gimple_lcx, 0),
                       pass_todo_flags(0,
-                                      TODO_ggc_collect     | TODO_update_ssa     | TODO_verify_stmts))
+                                      TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts))
   {}
 
   /* opt_pass methods: */

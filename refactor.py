@@ -74,6 +74,9 @@ def clean_field(field):
     # Strip out leading/trailing whitespace:
     field = field.strip()
     field = field.replace('\n', ' ')
+    if '|' in field:
+        field = ' | '.join([flag.strip()
+                            for flag in field.split('|')])
     return field
 
 def parse_basic_fields(gd):
