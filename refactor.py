@@ -116,9 +116,9 @@ TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
 public:
   %(classname)s(context &ctxt)
     : %(passkind)s(ctxt,
-                   %(name)s,				/* name */
-                   %(optinfo_flags)s,                   /* optinfo_flags */
-                   %(tv_id)s,				/* tv_id */
+                   %(name)s,
+                   %(optinfo_flags)s,
+                   %(tv_id)s,
                    pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),
                    pass_todo_flags(%(todo_flags_start)s,
                                    %(todo_flags_finish)s)'''
