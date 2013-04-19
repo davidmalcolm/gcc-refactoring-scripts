@@ -120,16 +120,53 @@ public:
   %(classname)s(context &ctxt)
 '''
 
-def finish_pass_constructor(d):
+def flags_ctor(indent, name, d, prefix, argnames, trailingtext):
+    s = indent + '%s(' % name
+    indent = ' ' * len(s)
+    argvals = ['%s' % d[argname]
+               for argname in argnames]
+    argctors = ['%s(%s)' % (argname[len(prefix) + 1:], d[argname])
+                for argname in argnames]
+    # If all flags are 0, do on a single line:
+    if 0: #all([argval == '0' for argval in argvals]):
+        s += ')'
+        s += trailingtext
+    else:
+        # Otherwise, split so that each argument is on a separate line:
+        for i, (argctor, argnames) in enumerate(zip(argctors, argnames)):
+            islastarg = (i == len(argctors) - 1)
+            if i != 0:
+                s += indent
+            s += argctor
+            if islastarg:
+                s += ')'
+                s += trailingtext
+            else:
+                s += ','
+            if not islastarg:
+                s += '\n'
+    return s
+
+def finish_pass_constructor(d, trailingtext):
     s = '    : %(passkind)s(' % d
     indent = ' ' * len(s)
     s += 'ctxt,\n'
     s += indent + '%(name)s,\n' % d
     s += indent + '%(optinfo_flags)s,\n' % d
     s += indent + '%(tv_id)s,\n' % d
-    s += indent + 'pass_properties(%(properties_required)s, %(properties_provided)s, %(properties_destroyed)s),\n' % d
-    s += indent + 'pass_todo_flags(%(todo_flags_start)s,\n' % d
-    s += indent + '                %(todo_flags_finish)s)' % d
+    s += flags_ctor(indent, 'pass_properties', d,
+                    'properties',
+                    ('properties_required',
+                     'properties_provided',
+                     'properties_destroyed'),
+                    ',')
+    s += '\n'
+    s += flags_ctor(indent, 'pass_todo_flags', d,
+                    'todo_flags',
+                    ('todo_flags_start',
+                     'todo_flags_finish'),
+                    trailingtext)
+    s += '\n'
     return s
 
 TEMPLATE_FACTORY_FUNCTION = '''%(static)s%(passkind)s *
@@ -220,9 +257,8 @@ def make_replacement(pi):
     d = pi._asdict()
     d['classname'] = pi.passname
     s = TEMPLATE_START_OF_CLASS % d
-    s += finish_pass_constructor(d)
-    s += r''')
-  {}
+    s += finish_pass_constructor(d, ')')
+    s += r'''  {}
 '''
     s += make_pass_methods(pi)
     s += '}; // class %s\n\n' % d['classname']
@@ -238,9 +274,8 @@ def make_replacement2(pi, extra):
     d.update(extra._asdict())
     d['classname'] = pi.passname
     s = TEMPLATE_START_OF_CLASS % d
-    s += finish_pass_constructor(d)
-    s += r''',
-                     %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
+    s += finish_pass_constructor(d, ',')
+    s += r'''                     %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
   {}
 ''' % d
     s += make_pass_methods(pi)

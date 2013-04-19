@@ -66,9 +66,11 @@ public:
 \t\t   "jump2",
 \t\t   OPTGROUP_NONE,
 \t\t   TV_JUMP,
-\t\t   pass_properties(0, 0, 0),
-\t\t   pass_todo_flags(TODO_ggc_collect,
-\t\t\t\t   TODO_verify_rtl_sharing))
+\t\t   pass_properties(required(0),
+\t\t\t\t   provided(0),
+\t\t\t\t   destroyed(0)),
+\t\t   pass_todo_flags(start(TODO_ggc_collect),
+\t\t\t\t   finish(TODO_verify_rtl_sharing)))
   {}
 
   /* opt_pass methods: */
@@ -129,9 +131,11 @@ public:
 \t\t      "mudflap1",
 \t\t      OPTGROUP_NONE,
 \t\t      TV_NONE,
-\t\t      pass_properties(PROP_gimple_any, 0, 0),
-\t\t      pass_todo_flags(0,
-\t\t\t\t      0))
+\t\t      pass_properties(required(PROP_gimple_any),
+\t\t\t\t      provided(0),
+\t\t\t\t      destroyed(0)),
+\t\t      pass_todo_flags(start(0),
+\t\t\t\t      finish(0)))
   {}
 
   /* opt_pass methods: */
@@ -193,9 +197,11 @@ public:
 \t\t      "mudflap2",
 \t\t      OPTGROUP_NONE,
 \t\t      TV_NONE,
-\t\t      pass_properties(PROP_ssa | PROP_cfg | PROP_gimple_leh, 0, 0),
-\t\t      pass_todo_flags(0,
-\t\t\t\t      TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa))
+\t\t      pass_properties(required(PROP_ssa | PROP_cfg | PROP_gimple_leh),
+\t\t\t\t      provided(0),
+\t\t\t\t      destroyed(0)),
+\t\t      pass_todo_flags(start(0),
+\t\t\t\t      finish(TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa)))
   {}
 
   /* opt_pass methods: */
@@ -252,9 +258,11 @@ public:
 \t\t\t  "pta",
 \t\t\t  OPTGROUP_NONE,
 \t\t\t  TV_IPA_PTA,
-\t\t\t  pass_properties(0, 0, 0),
-\t\t\t  pass_todo_flags(0,
-\t\t\t\t\t  TODO_update_ssa))
+\t\t\t  pass_properties(required(0),
+\t\t\t\t\t  provided(0),
+\t\t\t\t\t  destroyed(0)),
+\t\t\t  pass_todo_flags(start(0),
+\t\t\t\t\t  finish(TODO_update_ssa)))
   {}
 
   /* opt_pass methods: */
@@ -324,9 +332,11 @@ public:
 \t\t     "cp",
 \t\t     OPTGROUP_NONE,
 \t\t     TV_IPA_CONSTANT_PROP,
-\t\t     pass_properties(0, 0, 0),
-\t\t     pass_todo_flags(0,
-\t\t\t\t     TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect),
+\t\t     pass_properties(required(0),
+\t\t\t\t     provided(0),
+\t\t\t\t     destroyed(0)),
+\t\t     pass_todo_flags(start(0),
+\t\t\t\t     finish(TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect)),
 \t\t     0) /* function_transform_todo_flags_start */
   {}
 
@@ -460,9 +470,11 @@ public:
 \t\t     "whole-program",
 \t\t     OPTGROUP_NONE,
 \t\t     TV_CGRAPHOPT,
-\t\t     pass_properties(0, 0, 0),
-\t\t     pass_todo_flags(0,
-\t\t\t\t     TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect),
+\t\t     pass_properties(required(0),
+\t\t\t\t     provided(0),
+\t\t\t\t     destroyed(0)),
+\t\t     pass_todo_flags(start(0),
+\t\t\t\t     finish(TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect)),
 \t\t     0) /* function_transform_todo_flags_start */
   {}
 
@@ -520,9 +532,11 @@ public:
 \t\t     "cdtor",
 \t\t     OPTGROUP_NONE,
 \t\t     TV_CGRAPHOPT,
-\t\t     pass_properties(0, 0, 0),
-\t\t     pass_todo_flags(0,
-\t\t\t\t     0),
+\t\t     pass_properties(required(0),
+\t\t\t\t     provided(0),
+\t\t\t\t     destroyed(0)),
+\t\t     pass_todo_flags(start(0),
+\t\t\t\t     finish(0)),
 \t\t     0) /* function_transform_todo_flags_start */
   {}
 
@@ -612,9 +626,11 @@ public:
 \t\t      "*all_optimizations_g",
 \t\t      OPTGROUP_NONE,
 \t\t      TV_OPTIMIZE,
-\t\t      pass_properties(0, 0, 0),
-\t\t      pass_todo_flags(0,
-\t\t\t\t      0))
+\t\t      pass_properties(required(0),
+\t\t\t\t      provided(0),
+\t\t\t\t      destroyed(0)),
+\t\t      pass_todo_flags(start(0),
+\t\t\t\t      finish(0)))
   {}
 
   /* opt_pass methods: */
@@ -675,9 +691,11 @@ public:
 \t\t\t  "tmipa",
 \t\t\t  OPTGROUP_NONE,
 \t\t\t  TV_TRANS_MEM,
-\t\t\t  pass_properties(PROP_ssa | PROP_cfg, 0, 0),
-\t\t\t  pass_todo_flags(0,
-\t\t\t\t\t  0))
+\t\t\t  pass_properties(required(PROP_ssa | PROP_cfg),
+\t\t\t\t\t  provided(0),
+\t\t\t\t\t  destroyed(0)),
+\t\t\t  pass_todo_flags(start(0),
+\t\t\t\t\t  finish(0)))
   {}
 
   /* opt_pass methods: */
@@ -739,9 +757,11 @@ public:
 \t\t      "cplxlower",
 \t\t      OPTGROUP_NONE,
 \t\t      TV_NONE,
-\t\t      pass_properties(PROP_ssa, PROP_gimple_lcx, 0),
-\t\t      pass_todo_flags(0,
-\t\t\t\t      TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts))
+\t\t      pass_properties(required(PROP_ssa),
+\t\t\t\t      provided(PROP_gimple_lcx),
+\t\t\t\t      destroyed(0)),
+\t\t      pass_todo_flags(start(0),
+\t\t\t\t      finish(TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts)))
   {}
 
   /* opt_pass methods: */
