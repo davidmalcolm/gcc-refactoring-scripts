@@ -59,7 +59,7 @@ public:
   bool has_execute () { return true; }
   unsigned int impl_execute () { return execute_jump2 (); }
 
-};
+}; // class pass_jump2
 
 rtl_opt_pass *
 make_pass_jump2 (context &ctxt)
@@ -124,7 +124,7 @@ public:
     return execute_mudflap_function_decls ();
   }
 
-};
+}; // class pass_mudflap_1
 
 gimple_opt_pass *
 make_pass_mudflap_1 (context &ctxt)
@@ -186,7 +186,7 @@ public:
   bool has_execute () { return true; }
   unsigned int impl_execute () { return execute_mudflap_function_ops (); }
 
-};
+}; // class pass_mudflap_2
 
 gimple_opt_pass *
 make_pass_mudflap_2 (context &ctxt)
@@ -245,7 +245,7 @@ public:
   bool has_execute () { return true; }
   unsigned int impl_execute () { return ipa_pta_execute (); }
 
-};
+}; // class pass_ipa_pta
 
 simple_ipa_opt_pass *
 make_pass_ipa_pta (context &ctxt)
@@ -349,7 +349,7 @@ public:
   bool has_variable_transform () { return false; }
   void impl_variable_transform (struct varpool_node *) { }
 
-};
+}; // class pass_ipa_cp
 
 ipa_opt_pass_d *
 make_pass_ipa_cp (context &ctxt)
@@ -483,7 +483,7 @@ public:
   bool has_variable_transform () { return false; }
   void impl_variable_transform (struct varpool_node *) { }
 
-};
+}; // class pass_ipa_whole_program_visibility
 
 ipa_opt_pass_d *
 make_pass_ipa_whole_program_visibility (context &ctxt)
@@ -539,7 +539,7 @@ public:
   bool has_variable_transform () { return false; }
   void impl_variable_transform (struct varpool_node *) { }
 
-};
+}; // class pass_ipa_cdtor_merge
 
 ipa_opt_pass_d *
 make_pass_ipa_cdtor_merge (context &ctxt)
@@ -605,7 +605,7 @@ public:
   bool has_execute () { return false; }
   unsigned int impl_execute () { return 0; }
 
-};
+}; // class pass_all_optimizations_g
 
 static gimple_opt_pass *
 make_pass_all_optimizations_g (context &ctxt)
@@ -668,7 +668,7 @@ public:
   bool has_execute () { return true; }
   unsigned int impl_execute () { return ipa_tm_execute (); }
 
-};
+}; // class pass_ipa_tm
 
 simple_ipa_opt_pass *
 make_pass_ipa_tm (context &ctxt)
@@ -732,7 +732,7 @@ public:
   bool has_execute () { return true; }
   unsigned int impl_execute () { return tree_lower_complex (); }
 
-};
+}; // class pass_lower_complex
 
 gimple_opt_pass *
 make_pass_lower_complex (context &ctxt)

@@ -215,7 +215,7 @@ def make_replacement(pi):
   {}
 '''
     s += make_pass_methods(pi)
-    s += '};\n\n'
+    s += '}; // class %s\n\n' % d['classname']
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
@@ -246,7 +246,7 @@ def make_replacement2(pi, extra):
                           [('struct cgraph_node *', 'node')])
     s += make_method_pair(d, 'void', 'variable_transform',
                           [('struct varpool_node *', 'node')])
-    s += '};\n\n'
+    s += '}; // class %s\n\n' % d['classname']
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
