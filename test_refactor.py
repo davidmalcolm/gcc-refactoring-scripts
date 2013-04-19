@@ -55,7 +55,7 @@ struct rtl_opt_pass pass_jump2 =
 
 baz qux
 """
-        expected_code = r"""
+        expected_code = """
 foo bar
 
 class pass_jump2 : public rtl_opt_pass
@@ -63,12 +63,12 @@ class pass_jump2 : public rtl_opt_pass
 public:
   pass_jump2(context &ctxt)
     : rtl_opt_pass(ctxt,
-                   "jump2",
-                   OPTGROUP_NONE,
-                   TV_JUMP,
-                   pass_properties(0, 0, 0),
-                   pass_todo_flags(TODO_ggc_collect,
-                                   TODO_verify_rtl_sharing))
+\t\t   "jump2",
+\t\t   OPTGROUP_NONE,
+\t\t   TV_JUMP,
+\t\t   pass_properties(0, 0, 0),
+\t\t   pass_todo_flags(TODO_ggc_collect,
+\t\t\t\t   TODO_verify_rtl_sharing))
   {}
 
   /* opt_pass methods: */
@@ -120,18 +120,18 @@ struct gimple_opt_pass pass_mudflap_1 =
  }
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_mudflap_1 : public gimple_opt_pass
 {
 public:
   pass_mudflap_1(context &ctxt)
     : gimple_opt_pass(ctxt,
-                      "mudflap1",
-                      OPTGROUP_NONE,
-                      TV_NONE,
-                      pass_properties(PROP_gimple_any, 0, 0),
-                      pass_todo_flags(0,
-                                      0))
+\t\t      "mudflap1",
+\t\t      OPTGROUP_NONE,
+\t\t      TV_NONE,
+\t\t      pass_properties(PROP_gimple_any, 0, 0),
+\t\t      pass_todo_flags(0,
+\t\t\t\t      0))
   {}
 
   /* opt_pass methods: */
@@ -184,18 +184,18 @@ struct gimple_opt_pass pass_mudflap_2 =
  }
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_mudflap_2 : public gimple_opt_pass
 {
 public:
   pass_mudflap_2(context &ctxt)
     : gimple_opt_pass(ctxt,
-                      "mudflap2",
-                      OPTGROUP_NONE,
-                      TV_NONE,
-                      pass_properties(PROP_ssa | PROP_cfg | PROP_gimple_leh, 0, 0),
-                      pass_todo_flags(0,
-                                      TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa))
+\t\t      "mudflap2",
+\t\t      OPTGROUP_NONE,
+\t\t      TV_NONE,
+\t\t      pass_properties(PROP_ssa | PROP_cfg | PROP_gimple_leh, 0, 0),
+\t\t      pass_todo_flags(0,
+\t\t\t\t      TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa))
   {}
 
   /* opt_pass methods: */
@@ -244,17 +244,17 @@ make_pass_mudflap_2 (context &ctxt)
  }
 };
 """
-        expected_code = r"""class pass_ipa_pta : public simple_ipa_opt_pass
+        expected_code = """class pass_ipa_pta : public simple_ipa_opt_pass
 {
 public:
   pass_ipa_pta(context &ctxt)
     : simple_ipa_opt_pass(ctxt,
-                          "pta",
-                          OPTGROUP_NONE,
-                          TV_IPA_PTA,
-                          pass_properties(0, 0, 0),
-                          pass_todo_flags(0,
-                                          TODO_update_ssa))
+\t\t\t  "pta",
+\t\t\t  OPTGROUP_NONE,
+\t\t\t  TV_IPA_PTA,
+\t\t\t  pass_properties(0, 0, 0),
+\t\t\t  pass_todo_flags(0,
+\t\t\t\t\t  TODO_update_ssa))
   {}
 
   /* opt_pass methods: */
@@ -315,19 +315,19 @@ struct ipa_opt_pass_d pass_ipa_cp =
  NULL,					/* variable_transform */
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_ipa_cp : public ipa_opt_pass_d
 {
 public:
   pass_ipa_cp(context &ctxt)
     : ipa_opt_pass_d(ctxt,
-                     "cp",
-                     OPTGROUP_NONE,
-                     TV_IPA_CONSTANT_PROP,
-                     pass_properties(0, 0, 0),
-                     pass_todo_flags(0,
-                                     TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect),
-                     0) /* function_transform_todo_flags_start */
+\t\t     "cp",
+\t\t     OPTGROUP_NONE,
+\t\t     TV_IPA_CONSTANT_PROP,
+\t\t     pass_properties(0, 0, 0),
+\t\t     pass_todo_flags(0,
+\t\t\t\t     TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect),
+\t\t     0) /* function_transform_todo_flags_start */
   {}
 
   /* opt_pass methods: */
@@ -451,19 +451,19 @@ struct ipa_opt_pass_d pass_ipa_cdtor_merge =
  NULL					/* variable_transform */
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
 {
 public:
   pass_ipa_whole_program_visibility(context &ctxt)
     : ipa_opt_pass_d(ctxt,
-                     "whole-program",
-                     OPTGROUP_NONE,
-                     TV_CGRAPHOPT,
-                     pass_properties(0, 0, 0),
-                     pass_todo_flags(0,
-                                     TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect),
-                     0) /* function_transform_todo_flags_start */
+\t\t     "whole-program",
+\t\t     OPTGROUP_NONE,
+\t\t     TV_CGRAPHOPT,
+\t\t     pass_properties(0, 0, 0),
+\t\t     pass_todo_flags(0,
+\t\t\t\t     TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect),
+\t\t     0) /* function_transform_todo_flags_start */
   {}
 
   /* opt_pass methods: */
@@ -517,13 +517,13 @@ class pass_ipa_cdtor_merge : public ipa_opt_pass_d
 public:
   pass_ipa_cdtor_merge(context &ctxt)
     : ipa_opt_pass_d(ctxt,
-                     "cdtor",
-                     OPTGROUP_NONE,
-                     TV_CGRAPHOPT,
-                     pass_properties(0, 0, 0),
-                     pass_todo_flags(0,
-                                     0),
-                     0) /* function_transform_todo_flags_start */
+\t\t     "cdtor",
+\t\t     OPTGROUP_NONE,
+\t\t     TV_CGRAPHOPT,
+\t\t     pass_properties(0, 0, 0),
+\t\t     pass_todo_flags(0,
+\t\t\t\t     0),
+\t\t     0) /* function_transform_todo_flags_start */
   {}
 
   /* opt_pass methods: */
@@ -603,18 +603,18 @@ static struct gimple_opt_pass pass_all_optimizations_g =
  }
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_all_optimizations_g : public gimple_opt_pass
 {
 public:
   pass_all_optimizations_g(context &ctxt)
     : gimple_opt_pass(ctxt,
-                      "*all_optimizations_g",
-                      OPTGROUP_NONE,
-                      TV_OPTIMIZE,
-                      pass_properties(0, 0, 0),
-                      pass_todo_flags(0,
-                                      0))
+\t\t      "*all_optimizations_g",
+\t\t      OPTGROUP_NONE,
+\t\t      TV_OPTIMIZE,
+\t\t      pass_properties(0, 0, 0),
+\t\t      pass_todo_flags(0,
+\t\t\t\t      0))
   {}
 
   /* opt_pass methods: */
@@ -665,19 +665,19 @@ struct simple_ipa_opt_pass pass_ipa_tm =
  },
 };
 """
-        expected_code = r"""
+        expected_code = """
 
 class pass_ipa_tm : public simple_ipa_opt_pass
 {
 public:
   pass_ipa_tm(context &ctxt)
     : simple_ipa_opt_pass(ctxt,
-                          "tmipa",
-                          OPTGROUP_NONE,
-                          TV_TRANS_MEM,
-                          pass_properties(PROP_ssa | PROP_cfg, 0, 0),
-                          pass_todo_flags(0,
-                                          0))
+\t\t\t  "tmipa",
+\t\t\t  OPTGROUP_NONE,
+\t\t\t  TV_TRANS_MEM,
+\t\t\t  pass_properties(PROP_ssa | PROP_cfg, 0, 0),
+\t\t\t  pass_todo_flags(0,
+\t\t\t\t\t  0))
   {}
 
   /* opt_pass methods: */
@@ -730,18 +730,18 @@ struct gimple_opt_pass pass_lower_complex =
  }
 };
 """
-        expected_code = r"""
+        expected_code = """
 class pass_lower_complex : public gimple_opt_pass
 {
 public:
   pass_lower_complex(context &ctxt)
     : gimple_opt_pass(ctxt,
-                      "cplxlower",
-                      OPTGROUP_NONE,
-                      TV_NONE,
-                      pass_properties(PROP_ssa, PROP_gimple_lcx, 0),
-                      pass_todo_flags(0,
-                                      TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts))
+\t\t      "cplxlower",
+\t\t      OPTGROUP_NONE,
+\t\t      TV_NONE,
+\t\t      pass_properties(PROP_ssa, PROP_gimple_lcx, 0),
+\t\t      pass_todo_flags(0,
+\t\t\t\t      TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts))
   {}
 
   /* opt_pass methods: */

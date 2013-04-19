@@ -319,7 +319,7 @@ def refactor_pass_initializers(filename, src):
             pi = parse_basic_fields(gd)
             replacement, clog = make_replacement(pi)
             changelog.append(clog)
-            src = (src[:m.start()] + replacement + src[m.end():])
+            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 
         m = pattern2.search(src)
@@ -329,7 +329,7 @@ def refactor_pass_initializers(filename, src):
             extra = parse_extra_fields(gd)
             replacement, clog = make_replacement2(pi, extra)
             changelog.append(clog)
-            src = (src[:m.start()] + replacement + src[m.end():])
+            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 
         m = pattern3.search(src)
@@ -338,7 +338,7 @@ def refactor_pass_initializers(filename, src):
             replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
             clog = '(struct %(passkind)s %(passname)s): replace declaration with that of new function make_%(passname)s\n' % gd
             changelog.append(clog)
-            src = (src[:m.start()] + replacement + src[m.end():])
+            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 
         # no matches:
