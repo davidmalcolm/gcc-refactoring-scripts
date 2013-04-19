@@ -53,11 +53,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return false; }
-  bool gate() { return true; }
+  bool has_gate () { return false; }
+  bool gate () { return true; }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return execute_jump2 (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return execute_jump2 (); }
 
 };
 
@@ -116,11 +116,13 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_mudflap (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_mudflap (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return execute_mudflap_function_decls (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () {
+    return execute_mudflap_function_decls ();
+  }
 
 };
 
@@ -178,11 +180,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_mudflap (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_mudflap (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return execute_mudflap_function_ops (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return execute_mudflap_function_ops (); }
 
 };
 
@@ -237,11 +239,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_ipa_pta (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_ipa_pta (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return ipa_pta_execute (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return ipa_pta_execute (); }
 
 };
 
@@ -310,42 +312,42 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return cgraph_gate_cp (); }
+  bool has_gate () { return true; }
+  bool gate () { return cgraph_gate_cp (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return ipcp_driver (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return ipcp_driver (); }
 
   /* ipa_opt_pass_d methods: */
-  bool has_generate_summary() { return true; }
-  void impl_generate_summary() { ipcp_generate_summary (); }
+  bool has_generate_summary () { return true; }
+  void impl_generate_summary () { ipcp_generate_summary (); }
 
-  bool has_write_summary() { return true; }
-  void impl_write_summary() { ipcp_write_summary (); }
+  bool has_write_summary () { return true; }
+  void impl_write_summary () { ipcp_write_summary (); }
 
-  bool has_read_summary() { return true; }
-  void impl_read_summary() { ipcp_read_summary (); }
+  bool has_read_summary () { return true; }
+  void impl_read_summary () { ipcp_read_summary (); }
 
-  bool has_write_optimization_summary() { return true; }
-  void impl_write_optimization_summary() {
+  bool has_write_optimization_summary () { return true; }
+  void impl_write_optimization_summary () {
     ipa_prop_write_all_agg_replacement ();
   }
 
-  bool has_read_optimization_summary() { return true; }
-  void impl_read_optimization_summary() {
+  bool has_read_optimization_summary () { return true; }
+  void impl_read_optimization_summary () {
     ipa_prop_read_all_agg_replacement ();
   }
 
-  bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
+  bool has_stmt_fixup () { return false; }
+  void impl_stmt_fixup (struct cgraph_node *, gimple *) { }
 
-  bool has_function_transform() { return true; }
-  unsigned int impl_function_transform(struct cgraph_node *node) {
+  bool has_function_transform () { return true; }
+  unsigned int impl_function_transform (struct cgraph_node *node) {
     return ipcp_transform_function (node);
   }
 
-  bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *) { }
+  bool has_variable_transform () { return false; }
+  void impl_variable_transform (struct varpool_node *) { }
 
 };
 
@@ -446,40 +448,40 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() {
+  bool has_gate () { return true; }
+  bool gate () {
     return gate_whole_program_function_and_variable_visibility ();
   }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() {
+  bool has_execute () { return true; }
+  unsigned int impl_execute () {
     return whole_program_function_and_variable_visibility ();
   }
 
   /* ipa_opt_pass_d methods: */
-  bool has_generate_summary() { return false; }
-  void impl_generate_summary() { }
+  bool has_generate_summary () { return false; }
+  void impl_generate_summary () { }
 
-  bool has_write_summary() { return false; }
-  void impl_write_summary() { }
+  bool has_write_summary () { return false; }
+  void impl_write_summary () { }
 
-  bool has_read_summary() { return false; }
-  void impl_read_summary() { }
+  bool has_read_summary () { return false; }
+  void impl_read_summary () { }
 
-  bool has_write_optimization_summary() { return false; }
-  void impl_write_optimization_summary() { }
+  bool has_write_optimization_summary () { return false; }
+  void impl_write_optimization_summary () { }
 
-  bool has_read_optimization_summary() { return false; }
-  void impl_read_optimization_summary() { }
+  bool has_read_optimization_summary () { return false; }
+  void impl_read_optimization_summary () { }
 
-  bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
+  bool has_stmt_fixup () { return false; }
+  void impl_stmt_fixup (struct cgraph_node *, gimple *) { }
 
-  bool has_function_transform() { return false; }
-  unsigned int impl_function_transform(struct cgraph_node *) { return 0; }
+  bool has_function_transform () { return false; }
+  unsigned int impl_function_transform (struct cgraph_node *) { return 0; }
 
-  bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *) { }
+  bool has_variable_transform () { return false; }
+  void impl_variable_transform (struct varpool_node *) { }
 
 };
 
@@ -506,36 +508,36 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_ipa_cdtor_merge (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_ipa_cdtor_merge (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return ipa_cdtor_merge (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return ipa_cdtor_merge (); }
 
   /* ipa_opt_pass_d methods: */
-  bool has_generate_summary() { return false; }
-  void impl_generate_summary() { }
+  bool has_generate_summary () { return false; }
+  void impl_generate_summary () { }
 
-  bool has_write_summary() { return false; }
-  void impl_write_summary() { }
+  bool has_write_summary () { return false; }
+  void impl_write_summary () { }
 
-  bool has_read_summary() { return false; }
-  void impl_read_summary() { }
+  bool has_read_summary () { return false; }
+  void impl_read_summary () { }
 
-  bool has_write_optimization_summary() { return false; }
-  void impl_write_optimization_summary() { }
+  bool has_write_optimization_summary () { return false; }
+  void impl_write_optimization_summary () { }
 
-  bool has_read_optimization_summary() { return false; }
-  void impl_read_optimization_summary() { }
+  bool has_read_optimization_summary () { return false; }
+  void impl_read_optimization_summary () { }
 
-  bool has_stmt_fixup() { return false; }
-  void impl_stmt_fixup(struct cgraph_node *, gimple *) { }
+  bool has_stmt_fixup () { return false; }
+  void impl_stmt_fixup (struct cgraph_node *, gimple *) { }
 
-  bool has_function_transform() { return false; }
-  unsigned int impl_function_transform(struct cgraph_node *) { return 0; }
+  bool has_function_transform () { return false; }
+  unsigned int impl_function_transform (struct cgraph_node *) { return 0; }
 
-  bool has_variable_transform() { return false; }
-  void impl_variable_transform(struct varpool_node *) { }
+  bool has_variable_transform () { return false; }
+  void impl_variable_transform (struct varpool_node *) { }
 
 };
 
@@ -597,11 +599,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_all_optimizations_g (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_all_optimizations_g (); }
 
-  bool has_execute() { return false; }
-  unsigned int impl_execute() { return 0; }
+  bool has_execute () { return false; }
+  unsigned int impl_execute () { return 0; }
 
 };
 
@@ -660,11 +662,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return true; }
-  bool gate() { return gate_tm (); }
+  bool has_gate () { return true; }
+  bool gate () { return gate_tm (); }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return ipa_tm_execute (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return ipa_tm_execute (); }
 
 };
 
@@ -724,11 +726,11 @@ public:
   {}
 
   /* opt_pass methods: */
-  bool has_gate() { return false; }
-  bool gate() { return true; }
+  bool has_gate () { return false; }
+  bool gate () { return true; }
 
-  bool has_execute() { return true; }
-  unsigned int impl_execute() { return tree_lower_complex (); }
+  bool has_execute () { return true; }
+  unsigned int impl_execute () { return tree_lower_complex (); }
 
 };
 

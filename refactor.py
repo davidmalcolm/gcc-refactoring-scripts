@@ -143,11 +143,11 @@ def make_method(returntype, name, args, body, uses_args):
         block = '{ %s }' % body
     else:
         block = '{ }'
-    result = ('  %s %s(%s) %s\n'
+    result = ('  %s %s (%s) %s\n'
                 % (returntype, name, argdecl, block))
     # line-wrap at 76 chars:
     if len(result) > 76:
-        result = ('  %s %s(%s) {\n'
+        result = ('  %s %s (%s) {\n'
                   '    %s\n'
                   '  }\n'
                   % (returntype, name, argdecl, body))
@@ -159,9 +159,9 @@ def make_method_pair(d, returntype, name, args):
     is compared against NULL.  I believe that there isn't a portable way
     to do this for a C++ vfunc, so each callback becomes *two* vtable
     entries:
-       bool has_FOO()   // equivalent to (pass->FOO != NULL) in old code
+       bool has_FOO ()   // equivalent to (pass->FOO != NULL) in old code
     and
-       impl_FOO()       // equivalent to (pass->FOO ()) in old code
+       impl_FOO ()       // equivalent to (pass->FOO ()) in old code
     """
     existingfn = d[name]
     if existingfn in ('NULL', '0'):
