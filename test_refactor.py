@@ -1,7 +1,26 @@
-from refactor import refactor_pass_initializers
+from refactor import refactor_pass_initializers, tabify
 import unittest
 
-class Tests(unittest.TestCase):
+class GeneralTests(unittest.TestCase):
+    def assertTabifyEquals(self, input_code, expected_result):
+        actual_result = tabify(input_code)
+        self.maxDiff = 8192
+        self.assertMultiLineEqual(expected_result, actual_result) # 2.7+
+
+    def test_tabify(self):
+        self.assertTabifyEquals(
+            input_code=('public:\n'
+                        '  pass_jump2(context &ctxt)\n'
+                        '    : rtl_opt_pass(ctxt,\n'
+                        '                   "jump2",\n'
+                        '                   OPTGROUP_NONE,\n'),
+            expected_result=('public:\n'
+                             '  pass_jump2(context &ctxt)\n'
+                             '    : rtl_opt_pass(ctxt,\n'
+                             '\t\t   "jump2",\n'
+                             '\t\t   OPTGROUP_NONE,\n'))
+
+class PassConversionTests(unittest.TestCase):
     def assertRefactoringEquals(self,
                                 src, filename,
                                 expected_code, expected_changelog):

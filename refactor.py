@@ -265,6 +265,9 @@ def make_replacement2(pi, extra):
 
     return s, clog
 
+############################################################################
+# Generic hooks
+############################################################################
 class Changelog:
     def __init__(self, filename):
         self.filename = filename
@@ -288,6 +291,24 @@ def wrap(text):
                              for wl in textwrap.wrap(line)])
         result += '\n'
     return result
+
+def tabify_line(line):
+    stripped = line.lstrip()
+    indent = len(line) - len(stripped)
+    tabs = indent / 8
+    spaces = indent % 8
+    return ('\t' * tabs) + (' ' * spaces) + stripped
+
+def tabify(s):
+    """
+    Convert str s from space-based indentation to tab-based, assuming 8-space
+    tabs
+    """
+    lines = s.splitlines()
+    if s.endswith('\n'):
+        lines += ['']
+    return '\n'.join([tabify_line(line)
+                      for line in lines])
 
 def refactor_pass_initializers(filename, src):
     changelog = Changelog(filename)
