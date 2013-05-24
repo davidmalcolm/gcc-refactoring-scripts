@@ -175,8 +175,8 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
-TEMPLATE_CLOG = ('(struct %(passkind)s %(classname)s): convert from a global struct to a subclass of %(passkind)s\n'
-                 '(make_%(classname)s): New function to create an instance of the new class %(classname)s\n')
+TEMPLATE_CLOG = ('(struct %(passkind)s %(classname)s): Convert from a global struct to a subclass of %(passkind)s.\n'
+                 '(make_%(classname)s): New function to create an instance of the new class %(classname)s.\n')
 
 def make_method(returntype, name, args, body, uses_args):
     if uses_args:
@@ -371,7 +371,7 @@ def refactor_pass_initializers(filename, src):
         if m:
             gd = m.groupdict()
             replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
-            clog = '(struct %(passkind)s %(passname)s): replace declaration with that of new function make_%(passname)s\n' % gd
+            clog = '(struct %(passkind)s %(passname)s): Replace declaration with that of new function make_%(passname)s.\n' % gd
             changelog.append(clog)
             src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue

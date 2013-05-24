@@ -91,10 +91,10 @@ make_pass_jump2 (context &ctxt)
 baz qux
 """
         expected_changelog = \
-            ('\t* cfgcleanup.c (struct rtl_opt_pass pass_jump2): convert from a global\n'
-             '\tstruct to a subclass of rtl_opt_pass\n'
+            ('\t* cfgcleanup.c (struct rtl_opt_pass pass_jump2): Convert from a global\n'
+             '\tstruct to a subclass of rtl_opt_pass.\n'
              '\t(make_pass_jump2): New function to create an instance of the new class\n'
-             '\tpass_jump2\n')
+             '\tpass_jump2.\n')
 
         self.assertRefactoringEquals(src, 'cfgcleanup.c',
                                      expected_code, expected_changelog)
@@ -156,10 +156,10 @@ make_pass_mudflap_1 (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_1): convert from\n'
-             '\ta global struct to a subclass of gimple_opt_pass\n'
+            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_1): Convert from\n'
+             '\ta global struct to a subclass of gimple_opt_pass.\n'
              '\t(make_pass_mudflap_1): New function to create an instance of the new\n'
-             '\tclass pass_mudflap_1\n')
+             '\tclass pass_mudflap_1.\n')
 
         self.assertRefactoringEquals(src, 'tree-mudflap.c',
                                      expected_code, expected_changelog)
@@ -220,10 +220,10 @@ make_pass_mudflap_2 (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_2): convert from\n'
-             '\ta global struct to a subclass of gimple_opt_pass\n'
+            ('\t* tree-mudflap.c (struct gimple_opt_pass pass_mudflap_2): Convert from\n'
+             '\ta global struct to a subclass of gimple_opt_pass.\n'
              '\t(make_pass_mudflap_2): New function to create an instance of the new\n'
-             '\tclass pass_mudflap_2\n')
+             '\tclass pass_mudflap_2.\n')
 
         self.assertRefactoringEquals(src, 'tree-mudflap.c',
                                      expected_code, expected_changelog)
@@ -282,9 +282,9 @@ make_pass_ipa_pta (context &ctxt)
 """
         expected_changelog = \
             ('\t* tree-ssa-structalias.c (struct simple_ipa_opt_pass pass_ipa_pta):\n'
-             '\tconvert from a global struct to a subclass of simple_ipa_opt_pass\n'
+             '\tConvert from a global struct to a subclass of simple_ipa_opt_pass.\n'
              '\t(make_pass_ipa_pta): New function to create an instance of the new\n'
-             '\tclass pass_ipa_pta\n')
+             '\tclass pass_ipa_pta.\n')
 
         self.assertRefactoringEquals(src, 'tree-ssa-structalias.c',
                                      expected_code, expected_changelog)
@@ -387,10 +387,10 @@ make_pass_ipa_cp (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* ipa-cp.c (struct ipa_opt_pass_d pass_ipa_cp): convert from a global\n'
-             '\tstruct to a subclass of ipa_opt_pass_d\n'
+            ('\t* ipa-cp.c (struct ipa_opt_pass_d pass_ipa_cp): Convert from a global\n'
+             '\tstruct to a subclass of ipa_opt_pass_d.\n'
              '\t(make_pass_ipa_cp): New function to create an instance of the new\n'
-             '\tclass pass_ipa_cp\n')
+             '\tclass pass_ipa_cp.\n')
 
         self.assertRefactoringEquals(src, 'ipa-cp.c',
                                      expected_code, expected_changelog)
@@ -582,13 +582,13 @@ make_pass_ipa_cdtor_merge (context &ctxt)
 """
         expected_changelog = \
             ('\t* ipa.c (struct ipa_opt_pass_d pass_ipa_whole_program_visibility):\n'
-             '\tconvert from a global struct to a subclass of ipa_opt_pass_d\n'
+             '\tConvert from a global struct to a subclass of ipa_opt_pass_d.\n'
              '\t(make_pass_ipa_whole_program_visibility): New function to create an\n'
-             '\tinstance of the new class pass_ipa_whole_program_visibility\n'
-             '\t(struct ipa_opt_pass_d pass_ipa_cdtor_merge): convert from a global\n'
-             '\tstruct to a subclass of ipa_opt_pass_d\n'
+             '\tinstance of the new class pass_ipa_whole_program_visibility.\n'
+             '\t(struct ipa_opt_pass_d pass_ipa_cdtor_merge): Convert from a global\n'
+             '\tstruct to a subclass of ipa_opt_pass_d.\n'
              '\t(make_pass_ipa_cdtor_merge): New function to create an instance of the\n'
-             '\tnew class pass_ipa_cdtor_merge\n')
+             '\tnew class pass_ipa_cdtor_merge.\n')
 
         self.assertRefactoringEquals(src, 'ipa.c',
                                      expected_code, expected_changelog)
@@ -649,10 +649,10 @@ make_pass_all_optimizations_g (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* passes.c (struct gimple_opt_pass pass_all_optimizations_g): convert\n'
-             '\tfrom a global struct to a subclass of gimple_opt_pass\n'
+            ('\t* passes.c (struct gimple_opt_pass pass_all_optimizations_g): Convert\n'
+             '\tfrom a global struct to a subclass of gimple_opt_pass.\n'
              '\t(make_pass_all_optimizations_g): New function to create an instance of\n'
-             '\tthe new class pass_all_optimizations_g\n')
+             '\tthe new class pass_all_optimizations_g.\n')
 
         self.assertRefactoringEquals(src, 'passes.c',
                                      expected_code, expected_changelog)
@@ -714,10 +714,10 @@ make_pass_ipa_tm (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* trans-mem.c (struct simple_ipa_opt_pass pass_ipa_tm): convert from a\n'
-             '\tglobal struct to a subclass of simple_ipa_opt_pass\n'
+            ('\t* trans-mem.c (struct simple_ipa_opt_pass pass_ipa_tm): Convert from a\n'
+             '\tglobal struct to a subclass of simple_ipa_opt_pass.\n'
              '\t(make_pass_ipa_tm): New function to create an instance of the new\n'
-             '\tclass pass_ipa_tm\n')
+             '\tclass pass_ipa_tm.\n')
 
         self.assertRefactoringEquals(src, 'trans-mem.c',
                                      expected_code, expected_changelog)
@@ -780,10 +780,10 @@ make_pass_lower_complex (context &ctxt)
 }
 """
         expected_changelog = \
-            ('\t* tree-complex.c (struct gimple_opt_pass pass_lower_complex): convert\n'
-             '\tfrom a global struct to a subclass of gimple_opt_pass\n'
+            ('\t* tree-complex.c (struct gimple_opt_pass pass_lower_complex): Convert\n'
+             '\tfrom a global struct to a subclass of gimple_opt_pass.\n'
              '\t(make_pass_lower_complex): New function to create an instance of the\n'
-             '\tnew class pass_lower_complex\n')
+             '\tnew class pass_lower_complex.\n')
 
         self.assertRefactoringEquals(src, 'tree-complex.c',
                                      expected_code, expected_changelog)
@@ -802,15 +802,15 @@ extern simple_ipa_opt_pass *make_pass_ipa_lower_emutls (context &ctxt);
 extern ipa_opt_pass_d *make_pass_ipa_whole_program_visibility (context &ctxt);
 extern rtl_opt_pass *make_pass_cse (context &ctxt);
 """
-        expected_changelog = ('\t* tree-pass.h (struct gimple_opt_pass pass_sra): replace declaration\n'
-                              '\twith that of new function make_pass_sra\n'
-                              '\t(struct simple_ipa_opt_pass pass_ipa_lower_emutls): replace\n'
-                              '\tdeclaration with that of new function make_pass_ipa_lower_emutls\n'
-                              '\t(struct ipa_opt_pass_d pass_ipa_whole_program_visibility): replace\n'
+        expected_changelog = ('\t* tree-pass.h (struct gimple_opt_pass pass_sra): Replace declaration\n'
+                              '\twith that of new function make_pass_sra.\n'
+                              '\t(struct simple_ipa_opt_pass pass_ipa_lower_emutls): Replace\n'
+                              '\tdeclaration with that of new function make_pass_ipa_lower_emutls.\n'
+                              '\t(struct ipa_opt_pass_d pass_ipa_whole_program_visibility): Replace\n'
                               '\tdeclaration with that of new function\n'
-                              '\tmake_pass_ipa_whole_program_visibility\n'
-                              '\t(struct rtl_opt_pass pass_cse): replace declaration with that of new\n'
-                              '\tfunction make_pass_cse\n')
+                              '\tmake_pass_ipa_whole_program_visibility.\n'
+                              '\t(struct rtl_opt_pass pass_cse): Replace declaration with that of new\n'
+                              '\tfunction make_pass_cse.\n')
         self.assertRefactoringEquals(src, "tree-pass.h",
                                      expected_code, expected_changelog)
 
