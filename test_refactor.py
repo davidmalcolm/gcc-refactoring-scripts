@@ -1,4 +1,6 @@
-from refactor import refactor_pass_initializers, tabify
+from refactor import refactor_pass_initializers, tabify, \
+    ChangeLogLayout, ChangeLogAdditions, \
+    AUTHOR
 import unittest
 
 class GeneralTests(unittest.TestCase):
@@ -19,6 +21,47 @@ class GeneralTests(unittest.TestCase):
                              '    : rtl_opt_pass(ctxt,\n'
                              '\t\t   "jump2",\n'
                              '\t\t   OPTGROUP_NONE,\n'))
+
+class ChangeLogTests(unittest.TestCase):
+    def test_changelog_layout(self):
+        cll = ChangeLogLayout('../src')
+        self.assertIn('../src/gcc', cll.dirs)
+        self.assertIn('../src/gcc/testsuite', cll.dirs)
+
+        self.assertEqual(cll.locate_dir('../src/gcc/foo.c'),
+                         '../src/gcc')
+        self.assertEqual(cll.locate_dir('../src/gcc/c-family/foo.c'),
+                         '../src/gcc/c-family')
+        self.assertEqual(cll.locate_dir('../src/gcc/testsuite/gcc.target/arm/pr46631.cgcc/testsuite/foo.c'),
+                         '../src/gcc/testsuite')
+
+    def test_additions(self):
+        TEST_ISODATE = '1066-10-14'
+        cll = ChangeLogLayout('../src')
+        cla = ChangeLogAdditions(cll, TEST_ISODATE, AUTHOR,
+                                 'This is some header text')
+        cla.add_text('../src/gcc/foo.c',
+                     '* foo.c (bar): Do something.')
+        cla.add_text('../src/gcc/bar.c',
+                     '* bar.c (some_fn): Likewise.')
+        cla.add_text('../src/gcc/testsuite/baz.c',
+                     '* baz.c (quux): Do something.')
+        cla.add_text('../src/gcc/testsuite/some-other-file.c',
+                     '') # should have no effect
+        self.maxDiff = 8192
+        self.assertMultiLineEqual(
+            cla.text_per_dir['../src/gcc'],
+            ('1066-10-14  David Malcolm  <dmalcolm@redhat.com>\n'
+             '\n'
+             'This is some header text\n'
+             '* foo.c (bar): Do something.\n'
+             '* bar.c (some_fn): Likewise.\n'))
+        self.assertMultiLineEqual(
+            cla.text_per_dir['../src/gcc/testsuite'],
+            ('1066-10-14  David Malcolm  <dmalcolm@redhat.com>\n'
+             '\n'
+             'This is some header text\n'
+             '* baz.c (quux): Do something.\n'))
 
 class PassConversionTests(unittest.TestCase):
     def assertRefactoringEquals(self,
