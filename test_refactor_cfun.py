@@ -42,7 +42,7 @@ class MacroTests(unittest.TestCase):
         src = (
             'basic_block bb = BASIC_BLOCK (rpo[i]);')
         expected_code = (
-            'basic_block bb = cfun->cfg.get_basic_block_by_idx (rpo[i]);')
+            'basic_block bb = cfun->cfg->get_basic_block_by_idx (rpo[i]);')
         expected_changelog = ''
         self.assertRefactoringEquals(src, 'alias.c',
                                      expected_code, expected_changelog)

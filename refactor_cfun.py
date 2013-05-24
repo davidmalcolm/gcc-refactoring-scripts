@@ -23,9 +23,9 @@ def expand_cfun_macros(filename, src):
              (prev_not_ident + 'profile_status' + succ_not_ident,
               'cfun->cfg->get_profile_status ()'),
              (prev_not_ident + 'BASIC_BLOCK \((?P<N>.+)\)',
-              'cfun->cfg.get_basic_block_by_idx (%(N)s)'),
+              'cfun->cfg->get_basic_block_by_idx (%(N)s)'),
              (prev_not_ident + 'SET_BASIC_BLOCK \((?P<N>.+), (?P<BB>.+)\)',
-              'cfun->cfg.set_basic_block_by_idx (%(N)s, %(BB)s)'),
+              'cfun->cfg->set_basic_block_by_idx (%(N)s, %(BB)s)'),
              ('FOR_EACH_BB \((?P<BB>.+)\)',
               'FOR_EACH_BB_CFG (%(BB)s, cfun->cfg)'),
              ]
