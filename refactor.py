@@ -21,6 +21,14 @@ def get_change_scope(src, idx):
     if m:
         return m.groupdict()['MACRO']
 
+def within_comment(src, idx):
+    src = src[:idx]
+    idx = src.rfind('/*')
+    if idx == -1:
+        return False
+    src = src[idx:]
+    return '*/' not in src
+
 class ChangeLogLayout:
     """
     A collection of ChangeLog files in a directory hierarchy, thus

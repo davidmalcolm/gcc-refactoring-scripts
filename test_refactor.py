@@ -2,7 +2,7 @@ import unittest
 
 from refactor import tabify, \
     ChangeLogLayout, ChangeLogAdditions, \
-    AUTHOR, get_change_scope
+    AUTHOR, get_change_scope, within_comment
 
 class GeneralTests(unittest.TestCase):
     def assertTabifyEquals(self, input_code, expected_result):
@@ -46,6 +46,10 @@ class GeneralTests(unittest.TestCase):
                 4096),
                          'REG_FREQ_FROM_EDGE_FREQ')
 
+    def test_within_comment(self):
+        self.assertTrue(within_comment('/* foo', 1024))
+        self.assertFalse(within_comment('/* foo */', 1024))
+        self.assertFalse(within_comment('foo', 1024))
 
 class ChangeLogTests(unittest.TestCase):
     def test_changelog_layout(self):

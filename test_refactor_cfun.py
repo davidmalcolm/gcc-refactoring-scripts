@@ -177,6 +177,22 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'lcm.c',
                                      expected_code, expected_changelog)
 
+    def test_comment(self):
+        # The "last_basic_block" embedded in this comment shouldn't be
+        # changed:
+        self.assertUnchanged(
+            ('/* The encoding for a function consists of the following sections:\n'
+             '\n'
+             '   [...]\n'
+             '\n'
+             '     THE FUNCTION\n'
+             '\n'
+             '\n'
+             '     last_basic_block - in uleb128 form.\n'
+             '\n'
+             '     basic blocks     - This is the set of basic blocks.\n'
+             '   [...]\n'),
+            'lto-streamer.h')
 
 if __name__ == '__main__':
     unittest.main()

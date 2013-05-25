@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 
-from refactor import main, Changelog, get_change_scope
+from refactor import main, Changelog, get_change_scope, within_comment
 
 def expand_cfun_macros(filename, src):
     if filename == 'basic-block.h':
@@ -61,6 +61,8 @@ def expand_cfun_macros(filename, src):
             if m:
                 replacement = pat_out % m.groupdict()
                 # print(replacement)
+                if within_comment(src, m.start()):
+                    continue
                 src = (src[:m.start()] + replacement + src[m.end():])
                 match = 1
                 scope = get_change_scope(src, m.start())
