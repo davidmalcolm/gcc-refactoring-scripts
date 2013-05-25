@@ -65,12 +65,17 @@ def expand_cfun_macros(filename, src):
                 if within_comment(src, m.start()):
                     continue
                 src = (src[:m.start()] + replacement + src[m.end():])
-                match = 1
                 scope = get_change_scope(src, m.start())
                 if scope in macros_removed_by_scope:
                     macros_removed_by_scope[scope].add(macro)
                 else:
                     macros_removed_by_scope[scope] = set([macro])
+
+                # only process one match at most per re.finditer,
+                # since the m.start/end will no longer correspond
+                # to the string after the first subsitution
+                match = 1
+                break
         if not match:
             break
     for scope in macros_removed_by_scope:
