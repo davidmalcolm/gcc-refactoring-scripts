@@ -23,10 +23,10 @@ def get_change_scope(src, idx):
 
 def within_comment(src, idx):
     src = src[:idx]
-    idx = src.rfind('/*')
-    if idx == -1:
+    final_open_comment = src.rfind('/*')
+    if final_open_comment == -1:
         return False
-    src = src[idx:]
+    src = src[final_open_comment:]
     return '*/' not in src
 
 class ChangeLogLayout:
