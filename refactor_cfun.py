@@ -34,6 +34,8 @@ def expand_cfun_macros(filename, src):
               'FOR_EACH_BB_CFG (%(BB)s, cfun->cfg)'),
              ('FOR_ALL_BB ?\((?P<BB>.+)\)',
               'FOR_ALL_BB_CFG (%(BB)s, cfun->cfg)'),
+             ('FOR_EACH_BB_REVERSE \((?P<BB>.+)\)',
+              'FOR_EACH_BB_REVERSE_CFG (%(BB)s, cfun->cfg)')
              ]
     while 1:
         match = 0

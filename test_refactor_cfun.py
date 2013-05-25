@@ -113,5 +113,15 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'regs.h',
                                      expected_code, expected_changelog)
 
+    def test_FOR_EACH_BB_REVERSE(self):
+        src = (
+            '  FOR_EACH_BB_REVERSE (bb)\n')
+        expected_code = (
+            '  FOR_EACH_BB_REVERSE_CFG (bb, cfun->cfg)\n')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'cfghooks.c',
+                                     expected_code, expected_changelog)
+
+
 if __name__ == '__main__':
     unittest.main()
