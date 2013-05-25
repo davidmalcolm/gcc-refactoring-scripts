@@ -22,6 +22,8 @@ def expand_cfun_macros(filename, src):
               'cfun->cfg->get_last_basic_block ()'),
              (prev_not_ident + 'label_to_block_map' + succ_not_ident,
               'cfun->cfg->get_label_to_block_map ()'),
+             (prev_not_ident + 'profile_status = (?P<ENUM_VALUE>PROFILE_[A-Z]+);',
+              'cfun->cfg->set_profile_status (%(ENUM_VALUE)s);'),
              (prev_not_ident + 'profile_status' + succ_not_ident,
               'cfun->cfg->get_profile_status ()'),
              (prev_not_ident + 'BASIC_BLOCK \((?P<N>.+)\)',

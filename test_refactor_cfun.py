@@ -90,6 +90,15 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cfgbuild.c',
                                      expected_code, expected_changelog)
 
+    def test_set_profile_state(self):
+        src = (
+            '  profile_status = PROFILE_ABSENT;\n')
+        expected_code = (
+            '  cfun->cfg->set_profile_status (PROFILE_ABSENT);\n')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'graphite.c',
+                                     expected_code, expected_changelog)
+
     def test_profile_status_for_function(self):
         self.assertUnchanged(
             '  if (profile_status_for_function (fun) == PROFILE_ABSENT)',
