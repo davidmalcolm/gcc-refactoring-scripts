@@ -12,6 +12,15 @@ class MacroTests(unittest.TestCase):
     def assertUnchanged(self, src, filename):
         self.assertRefactoringEquals(src, filename, src, '')
 
+    def test_ENTRY_BLOCK_PTR(self):
+        src = (
+            '    FOR_EACH_EDGE (e, ei, ENTRY_BLOCK_PTR->succs)')
+        expected_code = (
+            '    FOR_EACH_EDGE (e, ei, cfun->cfg->get_entry_block ()->succs)')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'bb-reorder.c',
+                                     expected_code, expected_changelog)
+
     def test_n_basic_blocks(self):
         src = (
             'rpo = XNEWVEC (int, n_basic_blocks);')
@@ -59,11 +68,19 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cfgbuild.c',
                                      expected_code, expected_changelog)
 
-
     def test_profile_status_for_function(self):
         self.assertUnchanged(
             '  if (profile_status_for_function (fun) == PROFILE_ABSENT)',
             'predict.c')
+
+    def test_REG_FREQ_FROM_BB(self):
+        src = (
+            '  && !ENTRY_BLOCK_PTR->count)\t\t\\')
+        expected_code = (
+            '  && !cfun->cfg->get_entry_block ()->count)\t\t\\')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'regs.h',
+                                     expected_code, expected_changelog)
 
 if __name__ == '__main__':
     unittest.main()

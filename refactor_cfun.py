@@ -8,8 +8,10 @@ def expand_cfun_macros(filename, src):
 
     prev_not_ident = '(?<=[^_0-9a-zA-Z])'
     succ_not_ident = '(?=[^_0-9a-zA-Z])'
-    rules = [('ENTRY_BLOCK_PTR(^_FOR)', 'cfun->cfg->get_entry_block ()'),
-             ('EXIT_BLOCK_PTR(^_FOR)', 'cfun->cfg->get_exit_block ()'),
+    rules = [('ENTRY_BLOCK_PTR' + succ_not_ident,
+              'cfun->cfg->get_entry_block ()'),
+             ('EXIT_BLOCK_PTR' + succ_not_ident,
+              'cfun->cfg->get_exit_block ()'),
              (prev_not_ident + 'basic_block_info' + succ_not_ident,
               'cfun->cfg->get_basic_block_info ()'),
              (prev_not_ident + 'n_basic_blocks' + succ_not_ident,
