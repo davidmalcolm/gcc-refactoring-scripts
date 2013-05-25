@@ -1,7 +1,7 @@
 from collections import OrderedDict
 import re
 
-from refactor import main, Changelog, get_funcname
+from refactor import main, Changelog, get_change_scope
 
 def expand_cfun_macros(filename, src):
     if filename == 'basic-block.h':
@@ -53,7 +53,7 @@ def expand_cfun_macros(filename, src):
               'FOR_EACH_BB_REVERSE_CFG (%(BB)s, cfun->cfg)')
              ]
     changelog = Changelog(filename)
-    macros_removed_by_fn = OrderedDict()
+    macros_removed_by_scope = OrderedDict()
     while 1:
         match = 0
         for macro, pat_in, pat_out in rules:
@@ -63,21 +63,21 @@ def expand_cfun_macros(filename, src):
                 # print(replacement)
                 src = (src[:m.start()] + replacement + src[m.end():])
                 match = 1
-                funcname = get_funcname(src, m.start())
-                if funcname in macros_removed_by_fn:
-                    macros_removed_by_fn[funcname].add(macro)
+                scope = get_change_scope(src, m.start())
+                if scope in macros_removed_by_scope:
+                    macros_removed_by_scope[scope].add(macro)
                 else:
-                    macros_removed_by_fn[funcname] = set([macro])
+                    macros_removed_by_scope[scope] = set([macro])
         if not match:
             break
-    for funcname in macros_removed_by_fn:
-        macros = sorted(macros_removed_by_fn[funcname])
+    for scope in macros_removed_by_scope:
+        macros = sorted(macros_removed_by_scope[scope])
         if len(macros) == 1:
             changelog.append('(%s): Remove usage of %s macro.\n'
-                             % (funcname, macros[0]))
+                             % (scope, macros[0]))
         else:
             changelog.append('(%s): Remove uses of macros: %s.\n'
-                             % (funcname, ', '.join(macros)))
+                             % (scope, ', '.join(macros)))
 
 
     #print(src)

@@ -11,11 +11,15 @@ import textwrap
 # Generic hooks
 ############################################################################
 FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \(.*\)\n{'
-def get_funcname(src, idx):
+MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*\)\s+\\\n'
+def get_change_scope(src, idx):
     src = src[:idx]
     m = re.search(FUNC_PATTERN, src, re.MULTILINE | re.DOTALL)
     if m:
         return m.groupdict()['FUNCNAME']
+    m = re.search(MACRO_PATTERN, src, re.MULTILINE | re.DOTALL)
+    if m:
+        return m.groupdict()['MACRO']
 
 class ChangeLogLayout:
     """

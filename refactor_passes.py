@@ -1,7 +1,7 @@
 from collections import namedtuple
 import re
 
-from refactor import main, Changelog, get_funcname, tabify
+from refactor import main, Changelog, tabify
 
 ############################################################################
 # Parsing input

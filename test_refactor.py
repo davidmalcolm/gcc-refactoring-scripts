@@ -2,7 +2,7 @@ import unittest
 
 from refactor import tabify, \
     ChangeLogLayout, ChangeLogAdditions, \
-    AUTHOR, get_funcname
+    AUTHOR, get_change_scope
 
 class GeneralTests(unittest.TestCase):
     def assertTabifyEquals(self, input_code, expected_result):
@@ -24,19 +24,27 @@ class GeneralTests(unittest.TestCase):
                              '\t\t   OPTGROUP_NONE,\n'))
 
     def test_get_funcname(self):
-        self.assertEqual(get_funcname('void\n'
+        self.assertEqual(get_change_scope('void\n'
                                       'foo ()\n'
                                       '{\n'
                                       '  int i;\n',
                                       50),
                          'foo')
-        self.assertEqual(get_funcname('static void\n'
+        self.assertEqual(get_change_scope('static void\n'
             'compute_antinout_edge (sbitmap *antloc, sbitmap *transp, sbitmap *antin,\n'
             '\t\t       sbitmap *antout)\n'
             '{\n'
             '  basic_block *worklist, *qin, *qout, *qend;\n',
                                       4096),
                          'compute_antinout_edge')
+
+        self.assertEqual(get_change_scope(
+                '#define REG_FREQ_FROM_EDGE_FREQ(freq)	\t\t\t	   \\\n'
+                '  (optimize_size || (flag_branch_probabilities && !ENTRY_BLOCK_PTR->count) \\\n'
+                '   ? REG_FREQ_MAX : (freq * REG_FREQ_MAX / BB_FREQ_MAX)\t\t\t   \\\n'
+                '   ? (freq * REG_FREQ_MAX / BB_FREQ_MAX) : 1)\n',
+                4096),
+                         'REG_FREQ_FROM_EDGE_FREQ')
 
 
 class ChangeLogTests(unittest.TestCase):
