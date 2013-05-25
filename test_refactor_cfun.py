@@ -47,6 +47,19 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'asan.c',
                                      expected_code, expected_changelog)
 
+    def test_FOR_ALL_BB(self):
+        src = (
+            '  /* Put all blocks that have no successor into the initial work list.  */\n'
+            '  FOR_ALL_BB (bb)\n'
+            '    if (EDGE_COUNT (bb->succs) == 0)\n')
+        expected_code = (
+            '  /* Put all blocks that have no successor into the initial work list.  */\n'
+            '  FOR_ALL_BB_CFG (bb, cfun->cfg)\n'
+            '    if (EDGE_COUNT (bb->succs) == 0)\n')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'cfganal.c',
+                                     expected_code, expected_changelog)
+
     def test_BASIC_BLOCK(self):
         src = (
             'basic_block bb = BASIC_BLOCK (rpo[i]);')
