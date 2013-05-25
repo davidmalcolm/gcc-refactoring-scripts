@@ -1,6 +1,6 @@
 from refactor import refactor_pass_initializers, tabify, \
     ChangeLogLayout, ChangeLogAdditions, \
-    AUTHOR
+    AUTHOR, get_funcname
 import unittest
 
 class GeneralTests(unittest.TestCase):
@@ -21,6 +21,22 @@ class GeneralTests(unittest.TestCase):
                              '    : rtl_opt_pass(ctxt,\n'
                              '\t\t   "jump2",\n'
                              '\t\t   OPTGROUP_NONE,\n'))
+
+    def test_get_funcname(self):
+        self.assertEqual(get_funcname('void\n'
+                                      'foo ()\n'
+                                      '{\n'
+                                      '  int i;\n',
+                                      50),
+                         'foo')
+        self.assertEqual(get_funcname('static void\n'
+            'compute_antinout_edge (sbitmap *antloc, sbitmap *transp, sbitmap *antin,\n'
+            '\t\t       sbitmap *antout)\n'
+            '{\n'
+            '  basic_block *worklist, *qin, *qout, *qend;\n',
+                                      4096),
+                         'compute_antinout_edge')
+
 
 class ChangeLogTests(unittest.TestCase):
     def test_changelog_layout(self):

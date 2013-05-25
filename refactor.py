@@ -303,6 +303,13 @@ def make_replacement2(pi, extra):
 ############################################################################
 # Generic hooks
 ############################################################################
+FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \(.*\)\n{'
+def get_funcname(src, idx):
+    src = src[:idx]
+    m = re.search(FUNC_PATTERN, src, re.MULTILINE | re.DOTALL)
+    if m:
+        return m.groupdict()['FUNCNAME']
+
 class ChangeLogLayout:
     """
     A collection of ChangeLog files in a directory hierarchy, thus
