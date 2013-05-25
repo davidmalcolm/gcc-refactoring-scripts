@@ -11,7 +11,7 @@ class MacroTests(unittest.TestCase):
                                    src, filename,
                                    expected_code):
         actual_code, actual_changelog = expand_cfun_macros(filename, src)
-        self.maxDiff = 8192
+        self.maxDiff = 32768
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
     def assertRefactoringEquals(self,
                                 src, filename,
@@ -193,6 +193,18 @@ class MacroTests(unittest.TestCase):
              '     basic blocks     - This is the set of basic blocks.\n'
              '   [...]\n'),
             'lto-streamer.h')
+
+    def test_match_after_comment(self):
+        src = (
+            '  /* ENTRY_BLOCK_PTR/EXIT_BLOCK_PTR depend on cfun.\n'
+            '     Compare against ENTRY_BLOCK/EXIT_BLOCK to avoid that dependency.  */\n'
+            '       FOR_BB_BETWEEN (bb, ENTRY_BLOCK_PTR, EXIT_BLOCK_PTR, next_bb)\n')
+        expected_code = (
+            '  /* ENTRY_BLOCK_PTR/EXIT_BLOCK_PTR depend on cfun.\n'
+            '     Compare against ENTRY_BLOCK/EXIT_BLOCK to avoid that dependency.  */\n'
+            '       FOR_BB_BETWEEN (bb, cfun->cfg->get_entry_block (), cfun->cfg->get_exit_block (), next_bb)\n')
+        self.assertRefactoredCodeEquals(src, 'cfg.c',
+                                        expected_code)
 
 if __name__ == '__main__':
     unittest.main()

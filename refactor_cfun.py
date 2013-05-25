@@ -59,8 +59,7 @@ def expand_cfun_macros(filename, src):
     while 1:
         match = 0
         for macro, pat_in, pat_out in rules:
-            m = re.search(pat_in, src)
-            if m:
+            for m in re.finditer(pat_in, src):
                 replacement = pat_out % m.groupdict()
                 # print(replacement)
                 if within_comment(src, m.start()):

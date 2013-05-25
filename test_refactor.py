@@ -50,6 +50,7 @@ class GeneralTests(unittest.TestCase):
         self.assertTrue(within_comment('/* foo', 1024))
         self.assertFalse(within_comment('/* foo */', 1024))
         self.assertFalse(within_comment('foo', 1024))
+        self.assertFalse(within_comment('/* foo */ /', 1024))
 
 class ChangeLogTests(unittest.TestCase):
     def test_changelog_layout(self):
