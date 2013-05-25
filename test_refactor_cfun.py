@@ -60,6 +60,15 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cfganal.c',
                                      expected_code, expected_changelog)
 
+    def test_FOR_ALL_BB_nospace(self):
+        src = (
+            '		      FOR_ALL_BB(bb)\n')
+        expected_code = (
+            '		      FOR_ALL_BB_CFG (bb, cfun->cfg)\n')
+        expected_changelog = ''
+        self.assertRefactoringEquals(src, 'df-core.c',
+                                     expected_code, expected_changelog)
+
     def test_BASIC_BLOCK(self):
         src = (
             'basic_block bb = BASIC_BLOCK (rpo[i]);')
