@@ -4,7 +4,9 @@ import re
 from refactor import main, Changelog, get_change_scope, within_comment
 
 def expand_cfun_macros(filename, src):
-    if filename == 'basic-block.h':
+    if filename in ('basic-block.h',
+                    'testsuite/gcc.dg/tree-ssa/20041122-1.c',
+                    ):
         return src, ''
 
     prev_not_ident = '(?<=[^_0-9a-zA-Z])'
