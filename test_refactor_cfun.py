@@ -27,7 +27,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '    FOR_EACH_EDGE (e, ei, ENTRY_BLOCK_PTR->succs)')
         expected_code = (
-            '    FOR_EACH_EDGE (e, ei, cfun->cfg->get_entry_block ()->succs)')
+            '    FOR_EACH_EDGE (e, ei, cfun->cfg->entry_block_ptr->succs)')
         expected_changelog = \
             '\t* bb-reorder.c (None): Remove usage of ENTRY_BLOCK_PTR macro.\n'
         self.assertRefactoringEquals(src, 'bb-reorder.c',
@@ -37,7 +37,7 @@ class MacroTests(unittest.TestCase):
         src = (
             'rpo = XNEWVEC (int, n_basic_blocks);')
         expected_code = (
-            'rpo = XNEWVEC (int, cfun->cfg->get_n_basic_blocks ());')
+            'rpo = XNEWVEC (int, cfun->cfg->n_basic_blocks);')
         expected_changelog = make_expected_changelog('alias.c', 'None',
                                                      'Remove usage of n_basic_blocks macro.')
         self.assertRefactoredCodeEquals(src, 'alias.c',
@@ -61,9 +61,9 @@ class MacroTests(unittest.TestCase):
             '{\n'
             '  basic_block bb, last_bb = NULL;\n'
             '  gimple_stmt_iterator i;\n'
-            '  int saved_last_basic_block = cfun->cfg->get_last_basic_block ();\n'
+            '  int saved_last_basic_block = cfun->cfg->last_basic_block;\n'
             '\n'
-            '  FOR_EACH_BB_CFG (bb, cfun->cfg)\n'
+            '  FOR_EACH_BB (bb, cfun->cfg)\n'
             '     {\n'
             '       basic_block prev_bb = bb;\n')
         expected_changelog = (
@@ -79,7 +79,7 @@ class MacroTests(unittest.TestCase):
             '    if (EDGE_COUNT (bb->succs) == 0)\n')
         expected_code = (
             '  /* Put all blocks that have no successor into the initial work list.  */\n'
-            '  FOR_ALL_BB_CFG (bb, cfun->cfg)\n'
+            '  FOR_ALL_BB (bb, cfun->cfg)\n'
             '    if (EDGE_COUNT (bb->succs) == 0)\n')
         self.assertRefactoredCodeEquals(src, 'cfganal.c',
                                         expected_code)
@@ -88,7 +88,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '		      FOR_ALL_BB(bb)\n')
         expected_code = (
-            '		      FOR_ALL_BB_CFG (bb, cfun->cfg)\n')
+            '		      FOR_ALL_BB (bb, cfun->cfg)\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'df-core.c',
                                         expected_code)
@@ -105,7 +105,7 @@ class MacroTests(unittest.TestCase):
             'init_alias_analysis (void)\n'
             '{\n'
             '...\n'
-            'basic_block bb = cfun->cfg->get_basic_block_by_idx (rpo[i]);')
+            'basic_block bb = cfun->cfg->get_bb (rpo[i]);')
         expected_changelog = (
             '\t* alias.c (init_alias_analysis): Remove usage of BASIC_BLOCK macro.\n')
         self.assertRefactoringEquals(src, 'alias.c',
@@ -118,7 +118,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '  if (profile_status != PROFILE_ABSENT)\n')
         expected_code = (
-            '  if (cfun->cfg->get_profile_status () != PROFILE_ABSENT)\n')
+            '  if (cfun->cfg->profile_status != PROFILE_ABSENT)\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'cfgbuild.c',
                                         expected_code)
@@ -127,7 +127,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '  profile_status = PROFILE_ABSENT;\n')
         expected_code = (
-            '  cfun->cfg->set_profile_status (PROFILE_ABSENT);\n')
+            '  cfun->cfg->profile_status = PROFILE_ABSENT;\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'graphite.c',
                                         expected_code)
@@ -141,7 +141,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '  && !ENTRY_BLOCK_PTR->count)\t\t\\')
         expected_code = (
-            '  && !cfun->cfg->get_entry_block ()->count)\t\t\\')
+            '  && !cfun->cfg->entry_block_ptr->count)\t\t\\')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'regs.h',
                                         expected_code)
@@ -150,7 +150,7 @@ class MacroTests(unittest.TestCase):
         src = (
             '  FOR_EACH_BB_REVERSE (bb)\n')
         expected_code = (
-            '  FOR_EACH_BB_REVERSE_CFG (bb, cfun->cfg)\n')
+            '  FOR_EACH_BB_REVERSE (bb, cfun->cfg)\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'cfghooks.c',
                                         expected_code)
@@ -171,7 +171,7 @@ class MacroTests(unittest.TestCase):
             '{\n'
             '  basic_block *worklist, *qin, *qout, *qend;\n'
             '\n'
-            '  qin = qout = worklist = XNEWVEC (basic_block, cfun->cfg->get_n_basic_blocks ());\n')
+            '  qin = qout = worklist = XNEWVEC (basic_block, cfun->cfg->n_basic_blocks);\n')
         expected_changelog = (
             '\t* lcm.c (compute_antinout_edge): Remove usage of n_basic_blocks macro.\n')
         self.assertRefactoringEquals(src, 'lcm.c',
@@ -202,7 +202,7 @@ class MacroTests(unittest.TestCase):
         expected_code = (
             '  /* ENTRY_BLOCK_PTR/EXIT_BLOCK_PTR depend on cfun.\n'
             '     Compare against ENTRY_BLOCK/EXIT_BLOCK to avoid that dependency.  */\n'
-            '       FOR_BB_BETWEEN (bb, cfun->cfg->get_entry_block (), cfun->cfg->get_exit_block (), next_bb)\n')
+            '       FOR_BB_BETWEEN (bb, cfun->cfg->entry_block_ptr, cfun->cfg->exit_block_ptr, next_bb)\n')
         self.assertRefactoredCodeEquals(src, 'cfg.c',
                                         expected_code)
 

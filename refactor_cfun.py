@@ -3,58 +3,53 @@ import re
 
 from refactor import main, Changelog, get_change_scope, within_comment
 
-class Macro(namedtuple("macro", ("name", "pattern", "expansion"))):
+class Macro(namedtuple("Macro", ("name", "pattern", "expansion"))):
     pass
 
-prev_not_ident = '(?<=[^_0-9a-zA-Z])'
+prev_not_ident_or_deref = '(?<=[^_0-9a-zA-Z>])'
 succ_not_ident = '(?=[^_0-9a-zA-Z])'
 macros = \
-    [Macro(name, pattern, expansion)
-     for name, pattern, expansion in [
-        # basic-block.h:
-        ('ENTRY_BLOCK_PTR',
-         'ENTRY_BLOCK_PTR' + succ_not_ident,
-         'cfun->cfg->get_entry_block ()'),
-        ('EXIT_BLOCK_PTR',
-         'EXIT_BLOCK_PTR' + succ_not_ident,
-         'cfun->cfg->get_exit_block ()'),
-        ('basic_block_info',
-         prev_not_ident + 'basic_block_info' + succ_not_ident,
-         'cfun->cfg->get_basic_block_info ()'),
-        ('n_basic_blocks',
-         prev_not_ident + 'n_basic_blocks' + succ_not_ident,
-         'cfun->cfg->get_n_basic_blocks ()'),
-        ('n_edges',
-         prev_not_ident + 'n_edges' + succ_not_ident,
-         'cfun->cfg->get_n_edges ()'),
-        ('last_basic_block',
-         prev_not_ident + 'last_basic_block' + succ_not_ident,
-         'cfun->cfg->get_last_basic_block ()'),
-        ('label_to_block_map',
-         prev_not_ident + 'label_to_block_map' + succ_not_ident,
-         'cfun->cfg->get_label_to_block_map ()'),
-        ('profile_status',
-         prev_not_ident + 'profile_status = (?P<ENUM_VALUE>PROFILE_[A-Z]+);',
-         'cfun->cfg->set_profile_status (%(ENUM_VALUE)s);'),
-        ('profile_status',
-         prev_not_ident + 'profile_status' + succ_not_ident,
-         'cfun->cfg->get_profile_status ()'),
-        ('BASIC_BLOCK',
-         prev_not_ident + 'BASIC_BLOCK \((?P<N>.+)\)',
-         'cfun->cfg->get_basic_block_by_idx (%(N)s)'),
-        ('SET_BASIC_BLOCK',
-         prev_not_ident + 'SET_BASIC_BLOCK \((?P<N>.+), (?P<BB>.+)\)',
-         'cfun->cfg->set_basic_block_by_idx (%(N)s, %(BB)s)'),
-        ('FOR_EACH_BB',
-         'FOR_EACH_BB \((?P<BB>.+)\)',
-         'FOR_EACH_BB_CFG (%(BB)s, cfun->cfg)'),
-        ('FOR_ALL_BB',
-         'FOR_ALL_BB ?\((?P<BB>.+)\)',
-         'FOR_ALL_BB_CFG (%(BB)s, cfun->cfg)'),
-        ('FOR_EACH_BB_REVERSE',
-         'FOR_EACH_BB_REVERSE \((?P<BB>.+)\)',
-         'FOR_EACH_BB_REVERSE_CFG (%(BB)s, cfun->cfg)'),
-        ]]
+    [# basic-block.h:
+     Macro('ENTRY_BLOCK_PTR',
+           'ENTRY_BLOCK_PTR' + succ_not_ident,
+           'cfun->cfg->entry_block_ptr'),
+     Macro('EXIT_BLOCK_PTR',
+           'EXIT_BLOCK_PTR' + succ_not_ident,
+           'cfun->cfg->exit_block_ptr'),
+     Macro('basic_block_info',
+           prev_not_ident_or_deref + 'basic_block_info' + succ_not_ident,
+           'cfun->cfg->basic_block_info'),
+     Macro('n_basic_blocks',
+           prev_not_ident_or_deref + 'n_basic_blocks' + succ_not_ident,
+           'cfun->cfg->n_basic_blocks'),
+     Macro('n_edges',
+           prev_not_ident_or_deref + 'n_edges' + succ_not_ident,
+           'cfun->cfg->n_edges'),
+     Macro('last_basic_block',
+           prev_not_ident_or_deref + 'last_basic_block' + succ_not_ident,
+           'cfun->cfg->last_basic_block'),
+     Macro('label_to_block_map',
+           prev_not_ident_or_deref + 'label_to_block_map' + succ_not_ident,
+           'cfun->cfg->label_to_block_map'),
+     Macro('profile_status',
+           prev_not_ident_or_deref + 'profile_status' + succ_not_ident,
+           'cfun->cfg->profile_status'),
+     Macro('BASIC_BLOCK',
+           prev_not_ident_or_deref + 'BASIC_BLOCK \((?P<N>.+)\)',
+           'cfun->cfg->get_bb (%(N)s)'),
+     Macro('SET_BASIC_BLOCK',
+           prev_not_ident_or_deref + 'SET_BASIC_BLOCK \((?P<N>.+), (?P<BB>.+)\)',
+           'cfun->cfg->set_bb (%(N)s, %(BB)s)'),
+     Macro('FOR_EACH_BB',
+           'FOR_EACH_BB \((?P<BB>[^,\n]+)\)',
+           'FOR_EACH_BB (%(BB)s, cfun->cfg)'),
+     Macro('FOR_ALL_BB',
+           'FOR_ALL_BB ?\((?P<BB>[^,\n]+)\)',
+           'FOR_ALL_BB (%(BB)s, cfun->cfg)'),
+     Macro('FOR_EACH_BB_REVERSE',
+           'FOR_EACH_BB_REVERSE \((?P<BB>[^,\n]+)\)',
+           'FOR_EACH_BB_REVERSE (%(BB)s, cfun->cfg)'),
+                            ]
 
 def expand_cfun_macros(filename, src):
     if filename in ('basic-block.h',
