@@ -236,6 +236,17 @@ class Source:
         for line, touched in old_lines:
             if touched or not just_changed:
                 while len(line) > 80:
+                    # Add parens to changed long lines with ternary ? : that
+                    # lack them:
+                    m = re.match('(?P<lhs>[^=]+) = (?P<condition>.+) \?'
+                                 ' (?P<on_true>.+) : (?P<on_false>.+);', line)
+                    if m:
+                        gd = m.groupdict()
+                        # Parenthesize nontrivial conditions:
+                        if not gd['condition'].isalnum():
+                            gd['condition'] = '(%s)' % gd['condition']
+                        line = ('%(lhs)s = (%(condition)s'
+                                ' ? %(on_true)s : %(on_false)s);' % gd)
                     wrapped, remainder = self._get_split_point(line)
                     if wrapped:
                         new_lines.append(wrapped)
@@ -250,9 +261,20 @@ class Source:
         """
         Calculate the best split of the line
         """
+        def _at_invocation():
+            # Avoid breaking invocations:
+            if line[split_at:][:2] == ' (':
+                if split_at > 0:
+                    if line[split_at - 1].isalpha():
+                        return True
+
         split_at = max_length
-        while line[split_at] != ' ':
+        while line[split_at] != ' ' or _at_invocation():
             split_at -= 1
+
+        # Break at ternary operators:
+        if ' ? ' in line:
+            split_at = line.rfind(' ? ')
 
         # Break before operators:
         if line[:split_at][-3:] in (' ==', ' !='):
@@ -280,10 +302,34 @@ class Source:
         Indent the content of line according to the context given
         in previous_lines
         """
-        last_line = previous_lines[-1]
-        if '(' in last_line:
-            indent = last_line.rfind('(') + 1
-            return (' ' * indent) + line
+        def _get_opening(_line):
+            # Track the open parens and their locations in last_line using
+            # a stack:
+            stack = []
+            for i, ch in enumerate(_line):
+                if ch in '[({':
+                    stack.append( (i, ch) )
+                if ch in '])}':
+                    if stack:
+                        stack.pop()
+                    else:
+                        # unmatched parens on this line:
+                        return
+            if stack:
+                indent, ch = stack[-1]
+                return indent, ch
+
+        def _get_last_opening():
+            for prev_line in previous_lines[::-1]:
+                opening = _get_opening(prev_line)
+                if opening:
+                    return opening
+
+        # Line up after the most-recently still-open paren:
+        opening = _get_last_opening()
+        if opening:
+            indent, ch = opening
+            return (' ' * (indent + 1)) + line
         else:
             return line
 

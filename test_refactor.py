@@ -163,6 +163,76 @@ class TestWrapping(unittest.TestCase):
             '    {\n')
         self.assertWrappedCodeEquals(src, expected_code)
 
+    def test_linewrap_indent_multiline(self):
+        # Ensure that we take into account more than just the preceding
+        # line when choosing indent location of a wrapped line
+        src = (
+            '   for (attempt = get_immediate_dominator (CDI_DOMINATORS, def->bb);\n'
+            '        !give_up && attempt && attempt != cfun->cfg->entry_block_ptr && def->cost >= min_cost;\n'
+            '        attempt = get_immediate_dominator (CDI_DOMINATORS, attempt))\n')
+        expected_code = (
+            '   for (attempt = get_immediate_dominator (CDI_DOMINATORS, def->bb);\n'
+            '        !give_up && attempt && attempt != cfun->cfg->entry_block_ptr\n'
+            '        && def->cost >= min_cost;\n'
+            '        attempt = get_immediate_dominator (CDI_DOMINATORS, attempt))\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap_indent_nested_parens(self):
+        # Ensure that we respect nested parens when choosing indent location
+        # of a wrapped line
+        src = (
+            '  basic_block bb = create_basic_block (BB_HEAD (e->dest), NULL, cfun->cfg->entry_block_ptr);\n')
+        expected_code = (
+            '  basic_block bb = create_basic_block (BB_HEAD (e->dest), NULL,\n'
+            '                                       cfun->cfg->entry_block_ptr);\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap_ternary(self):
+        src = (
+            '  if (dump_file)\n'
+            '    fprintf (dump_file,\n'
+            '             "Deleting fallthru block %i.\\n",\n'
+            '             b->index);\n'
+            '\n'
+            '          c = b->prev_bb == cfun->cfg->entry_block_ptr ? b->next_bb : b->prev_bb;\n')
+        expected_code = (
+            '  if (dump_file)\n'
+            '    fprintf (dump_file,\n'
+            '             "Deleting fallthru block %i.\\n",\n'
+            '             b->index);\n'
+            '\n'
+            '          c = ((b->prev_bb == cfun->cfg->entry_block_ptr)\n'
+            '               ? b->next_bb : b->prev_bb);\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap_ternary_short(self):
+        src = (
+            '  basic_block begin = reverse ? cfun->cfg->exit_block_ptr : cfun->cfg->entry_block_ptr;\n')
+        expected_code = (
+            '  basic_block begin = (reverse\n'
+            '                       ? cfun->cfg->exit_block_ptr : cfun->cfg->entry_block_ptr);\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap_ternary_arg(self):
+        src = (
+            '       e = make_edge (call_bb, return_bb,\n'
+            '                      return_bb == cfun->cfg->exit_block_ptr ? 0 : EDGE_FALLTHRU);\n')
+        expected_code = (
+            '       e = make_edge (call_bb, return_bb,\n'
+            '                      return_bb == cfun->cfg->exit_block_ptr\n'
+            '                      ? 0 : EDGE_FALLTHRU);\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap_invocation(self):
+        src = (
+            '      int save_LR_around_toc_setup = (TARGET_ELF\n'
+            '                                      && DEFAULT_ABI != ABI_AIX\n'
+            '                                      && flag_pic\n'
+            '                                      && ! info->lr_save_p\n'
+            '                                      && EDGE_COUNT (cfun->cfg->exit_block_ptr->preds) > 0);\n')
+        # We don't have a good way of wrapping this without breaking the
+        # EDGE_COUNT () invocation:
+        self.assertUnchanged(src)
 
 if __name__ == '__main__':
     unittest.main()
