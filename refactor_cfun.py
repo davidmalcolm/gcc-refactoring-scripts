@@ -65,6 +65,7 @@ def expand_cfun_macros(clog_filename, src):
 
     changelog = Changelog(clog_filename)
     macros_removed_by_scope = OrderedDict()
+    macros_changed_by_scope = OrderedDict()
     fields_replaced_by_scope = OrderedDict()
     while 1:
         match = 0
@@ -76,10 +77,14 @@ def expand_cfun_macros(clog_filename, src):
                     continue
                 src = src.replace(m.start(), m.end(), replacement)
                 scope = src.get_change_scope_at(m.start())
-                if scope in macros_removed_by_scope:
-                    macros_removed_by_scope[scope].add(macro.name)
+                if macro.name.startswith('FOR_'):
+                    dict_ = macros_changed_by_scope
                 else:
-                    macros_removed_by_scope[scope] = set([macro.name])
+                    dict_ = macros_removed_by_scope
+                if scope in dict_:
+                    dict_[scope].add(macro.name)
+                else:
+                    dict_[scope] = set([macro.name])
 
                 # only process one match at most per re.finditer,
                 # since the m.start/end will no longer correspond
@@ -123,19 +128,32 @@ def expand_cfun_macros(clog_filename, src):
     for scope in macros_removed_by_scope:
         macro_names = sorted(macros_removed_by_scope[scope])
         if len(macro_names) == 1:
-            changelog.append('(%s): Remove usage of %s macro.\n'
-                             % (scope, macro_names[0]))
+            changelog.append(scope,
+                             'Remove usage of %s macro.' % macro_names[0])
         else:
-            changelog.append('(%s): Remove uses of macros: %s.\n'
-                             % (scope, ', '.join(macro_names)))
+            changelog.append(scope,
+                             ('Remove uses of macros: %s.'
+                              % ', '.join(macro_names)))
+    for scope in macros_changed_by_scope:
+        macro_names = sorted(macros_changed_by_scope[scope])
+        if len(macro_names) == 1:
+            changelog.append(scope,
+                             ('Added cfun->cfg argument to usage of %s macro.'
+                              % macro_names[0]))
+        else:
+            changelog.append(scope,
+                             ('Added cfun->cfg argument to uses of macros: %s.'
+                              % ', '.join(macro_names)))
     for scope in fields_replaced_by_scope:
         field_names = sorted(fields_replaced_by_scope[scope])
         if len(field_names) == 1:
-            changelog.append('(%s): Drop leading x_ from usage of %s field.\n'
-                             % (scope, field_names[0]))
+            changelog.append(scope,
+                             ('Drop leading x_ from usage of %s field.'
+                              % field_names[0]))
         else:
-            changelog.append('(%s): Drop leading x_ from uses of macros: %s.\n'
-                             % (scope, ', '.join(field_names)))
+            changelog.append(scope,
+                             ('Drop leading x_ from uses of macros: %s.'
+                              % ', '.join(field_names)))
 
     #print(src)
     src = src.wrap()

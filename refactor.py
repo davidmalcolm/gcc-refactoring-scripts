@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 from datetime import date
 from difflib import unified_diff
 import os
@@ -91,15 +91,24 @@ class Changelog:
     """
     def __init__(self, filename):
         self.filename = filename
-        self.content = ''
+        self.scope_to_text = OrderedDict()
 
-    def append(self, text):
-        assert text.endswith('\n')
-        if self.content == '':
-            self.content += wrap('* %s %s' % (self.filename, text))
+    @property
+    def content(self):
+        result = ''
+        for scope, text in self.scope_to_text.iteritems():
+            if result == '':
+                result += wrap('* %s (%s): %s\n' % (self.filename, scope, text))
+            else:
+                result += wrap('(%s): %s\n' % (scope, text))
+        return result
+
+    def append(self, scope, text):
+        assert text.endswith('.')
+        if scope in self.scope_to_text:
+            self.scope_to_text[scope] += '  %s' % text
         else:
-            self.content += wrap('%s' % text)
-        assert self.content.endswith('\n')
+            self.scope_to_text[scope] = '%s' % text
 
 def wrap(text):
     """

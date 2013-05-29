@@ -171,9 +171,6 @@ make_%(classname)s (context &ctxt)
   return new %(classname)s (ctxt);
 }'''
 
-TEMPLATE_CLOG = ('(struct %(passkind)s %(classname)s): Convert from a global struct to a subclass of %(passkind)s.\n'
-                 '(make_%(classname)s): New function to create an instance of the new class %(classname)s.\n')
-
 def make_method(returntype, name, args, body, uses_args):
     if uses_args:
         argdecl = ', '.join(['%s%s' % (type_, argname)
@@ -249,7 +246,15 @@ def make_pass_methods(pi):
     s += make_method_pair(d, 'unsigned int', 'execute', () )
     return s
 
-def make_replacement(pi):
+def add_to_changelog(d, changelog):
+    changelog.append('struct %(passkind)s %(classname)s' % d,
+                     ('Convert from a global struct to a subclass of'
+                      ' %(passkind)s.' % d))
+    changelog.append('make_%(classname)s' % d,
+                     ('New function to create an instance of the new class'
+                      ' %(classname)s.' %d))
+
+def make_replacement(pi, changelog):
     d = pi._asdict()
     d['classname'] = pi.passname
     s = TEMPLATE_START_OF_CLASS % d
@@ -261,11 +266,11 @@ def make_replacement(pi):
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
-    clog = TEMPLATE_CLOG % d
+    add_to_changelog(d, changelog)
 
-    return s, clog
+    return s
 
-def make_replacement2(pi, extra):
+def make_replacement2(pi, extra, changelog):
     d = pi._asdict()
     d.update(extra._asdict())
     d['classname'] = pi.passname
@@ -292,9 +297,9 @@ def make_replacement2(pi, extra):
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
-    clog = TEMPLATE_CLOG % d
+    add_to_changelog(d, changelog)
 
-    return s, clog
+    return s
 
 def refactor_pass_initializers(filename, src):
     changelog = Changelog(filename)
@@ -303,8 +308,7 @@ def refactor_pass_initializers(filename, src):
         if m:
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
-            replacement, clog = make_replacement(pi)
-            changelog.append(clog)
+            replacement = make_replacement(pi, changelog)
             src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 
@@ -313,8 +317,7 @@ def refactor_pass_initializers(filename, src):
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
             extra = parse_extra_fields(gd)
-            replacement, clog = make_replacement2(pi, extra)
-            changelog.append(clog)
+            replacement = make_replacement2(pi, extra, changelog)
             src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 
@@ -322,8 +325,8 @@ def refactor_pass_initializers(filename, src):
         if m:
             gd = m.groupdict()
             replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
-            clog = '(struct %(passkind)s %(passname)s): Replace declaration with that of new function make_%(passname)s.\n' % gd
-            changelog.append(clog)
+            changelog.append('struct %(passkind)s %(passname)s' % gd,
+                             'Replace declaration with that of new function make_%(passname)s.' % gd)
             src = (src[:m.start()] + tabify(replacement) + src[m.end():])
             continue
 

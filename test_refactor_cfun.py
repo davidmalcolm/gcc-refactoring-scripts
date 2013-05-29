@@ -67,8 +67,8 @@ class MacroTests(unittest.TestCase):
             '     {\n'
             '       basic_block prev_bb = bb;\n')
         expected_changelog = (
-            '\t* asan.c (transform_statements): Remove uses of macros: FOR_EACH_BB,\n'
-            '\tlast_basic_block.\n')
+            '\t* asan.c (transform_statements): Remove usage of last_basic_block\n'
+            '\tmacro.  Added cfun->cfg argument to usage of FOR_EACH_BB macro.\n')
         self.assertRefactoringEquals(src, 'asan.c',
                                      expected_code, expected_changelog)
 
@@ -258,7 +258,7 @@ class MacroTests(unittest.TestCase):
             '  FOR_EACH_BB (bb, cfun->cfg)\n')
         expected_changelog = (
             '\t* testsuite/gcc.dg/plugin/selfassign.c (execute_warn_self_assign):\n'
-            '\tRemove usage of FOR_EACH_BB macro.\n')
+            '\tAdded cfun->cfg argument to usage of FOR_EACH_BB macro.\n')
         self.assertRefactoringEquals(src, 'testsuite/gcc.dg/plugin/selfassign.c',
                                      expected_code, expected_changelog)
 
