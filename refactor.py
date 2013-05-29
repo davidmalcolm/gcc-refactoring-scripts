@@ -52,6 +52,11 @@ class ChangeLogLayout:
                     if path.startswith('%s/' % dir_)],
                    key=len)
 
+    def get_path_relative_to_changelog(self, path):
+        dir_ = self.locate_dir(path)
+        assert path.startswith(dir_)
+        return path[len(dir_) + 1:]
+
 class ChangeLogAdditions:
     """
     A set of ChangeLog additions, referenced by a ChangeLogLayout
@@ -145,13 +150,13 @@ def tabify(s):
                       for line in lines])
 
 
-def refactor_file(path, refactoring, printdiff, applychanges):
+def refactor_file(path, relative_path, refactoring, printdiff,
+                  applychanges):
     with open(path) as f:
         src = f.read()
     #print(src)
     assert path.startswith('../src/gcc/')
-    filename = path[len('../src/gcc/'):]
-    dst, changelog = refactoring(filename, src)
+    dst, changelog = refactoring(relative_path, src)
     #print(dst)
 
     if printdiff:
@@ -191,7 +196,9 @@ def main(script, refactoring):
                     and (path.endswith('.c') or
                          path.endswith('.h')):
                 print(path)
+                relative_path = cll.get_path_relative_to_changelog(path)
                 clogtext = refactor_file(path,
+                                         relative_path,
                                          refactoring,
                                          printdiff=True,
                                          applychanges=True)

@@ -206,5 +206,61 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoredCodeEquals(src, 'cfg.c',
                                         expected_code)
 
+    def test_field_usage(self):
+        src = (
+            'basic_block'
+            'label_to_block_fn (struct function *ifun, tree dest)\n'
+            '{\n'
+            '[...snipped...]\n'
+            '  return (*ifun->cfg->x_label_to_block_map)[uid];\n'
+            '}\n')
+        expected_code = (
+            'basic_block'
+            'label_to_block_fn (struct function *ifun, tree dest)\n'
+            '{\n'
+            '[...snipped...]\n'
+            '  return (*ifun->cfg->label_to_block_map)[uid];\n'
+            '}\n')
+        self.assertRefactoredCodeEquals(src, 'tree-cfg.c',
+                                        expected_code)
+
+    def test_field_usage2(self):
+        src = (
+            '  /* Remove BB from the original basic block array.  */\n'
+            '  (*cfun->cfg->x_basic_block_info)[bb->index] = NULL;\n'
+            '  cfun->cfg->x_n_basic_blocks--;\n')
+        expected_code = (
+            '  /* Remove BB from the original basic block array.  */\n'
+            '  (*cfun->cfg->basic_block_info)[bb->index] = NULL;\n'
+            '  cfun->cfg->n_basic_blocks--;\n')
+        self.assertRefactoredCodeEquals(src, 'tree-cfg.c',
+                                        expected_code)
+
+    def test_testsuite_clog(self):
+        """
+        Ensure that the correct path is used when giving filenames
+        in a child ChangeLog file
+        """
+        src = (
+            'static unsigned int\n'
+            'execute_warn_self_assign (void)\n'
+            '{\n'
+            '  [...snipped...]\n'
+            '  FOR_EACH_BB (bb)\n')
+        expected_code = (
+            'static unsigned int\n'
+            'execute_warn_self_assign (void)\n'
+            '{\n'
+            '  [...snipped...]\n'
+            '  FOR_EACH_BB (bb, cfun->cfg)\n')
+        expected_changelog = (
+            '\t* testsuite/gcc.dg/plugin/selfassign.c (execute_warn_self_assign):\n'
+            '\tRemove usage of FOR_EACH_BB macro.\n')
+        self.assertRefactoringEquals(src, 'testsuite/gcc.dg/plugin/selfassign.c',
+                                     expected_code, expected_changelog)
+
+
+
+
 if __name__ == '__main__':
     unittest.main()

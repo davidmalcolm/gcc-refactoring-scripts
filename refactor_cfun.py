@@ -51,14 +51,21 @@ macros = \
            'FOR_EACH_BB_REVERSE (%(BB)s, cfun->cfg)'),
                             ]
 
-def expand_cfun_macros(filename, src):
-    if filename in ('basic-block.h',
-                    'testsuite/gcc.dg/tree-ssa/20041122-1.c',
-                    ):
+def expand_cfun_macros(clog_filename, src):
+    if clog_filename in ('basic-block.h',
+
+                         # testsuite/
+                         'gcc.dg/tree-ssa/20041122-1.c',
+
+                         # This one has its own struct control_flow_graph
+                         # with an x_entry_block_ptr field:
+                         'gcc.target/ia64/pr49303.c',
+                         ):
         return src, ''
 
-    changelog = Changelog(filename)
+    changelog = Changelog(clog_filename)
     macros_removed_by_scope = OrderedDict()
+    fields_replaced_by_scope = OrderedDict()
     while 1:
         match = 0
         for macro in macros:
@@ -81,6 +88,38 @@ def expand_cfun_macros(filename, src):
                 break
         if not match:
             break
+    field_replacements = \
+        ( ('x_entry_block_ptr', 'entry_block_ptr'),
+          ('x_exit_block_ptr', 'exit_block_ptr'),
+          ('x_basic_block_info', 'basic_block_info'),
+          ('x_n_basic_blocks', 'n_basic_blocks'),
+          ('x_n_edges', 'n_edges'),
+          ('x_last_basic_block', 'last_basic_block'),
+          ('x_label_to_block_map', 'label_to_block_map'),
+          ('x_profile_status', 'profile_status') )
+
+    while 1:
+        match = 0
+        for old, new in field_replacements:
+            for m in re.finditer('->%s' % old, src):
+                replacement = '->%s' % new
+                # print(replacement)
+                if within_comment(src, m.start()):
+                    continue
+                src = (src[:m.start()] + replacement + src[m.end():])
+                scope = get_change_scope(src, m.start())
+                if scope in fields_replaced_by_scope:
+                    fields_replaced_by_scope[scope].add(old)
+                else:
+                    fields_replaced_by_scope[scope] = set([old])
+
+                # only process one match at most per re.finditer,
+                # since the m.start/end will no longer correspond
+                # to the string after the first subsitution
+                match = 1
+                break
+        if not match:
+            break
     for scope in macros_removed_by_scope:
         macro_names = sorted(macros_removed_by_scope[scope])
         if len(macro_names) == 1:
@@ -89,6 +128,15 @@ def expand_cfun_macros(filename, src):
         else:
             changelog.append('(%s): Remove uses of macros: %s.\n'
                              % (scope, ', '.join(macro_names)))
+    for scope in fields_replaced_by_scope:
+        field_names = sorted(fields_replaced_by_scope[scope])
+        if len(field_names) == 1:
+            changelog.append('(%s): Drop leading x_ from usage of %s field.\n'
+                             % (scope, field_names[0]))
+        else:
+            changelog.append('(%s): Drop leading x_ from uses of macros: %s.\n'
+                             % (scope, ', '.join(field_names)))
+
 
 
     #print(src)

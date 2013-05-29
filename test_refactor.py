@@ -93,6 +93,15 @@ class ChangeLogTests(unittest.TestCase):
              'This is some header text\n'
              '* baz.c (quux): Do something.\n'))
 
+    def test_get_relative_path(self):
+        cll = ChangeLogLayout('../src')
+        self.assertEqual(
+            cll.get_path_relative_to_changelog('../src/gcc/tree-cfg.c'),
+            'tree-cfg.c')
+        self.assertEqual(
+            cll.get_path_relative_to_changelog('../src/gcc/testsuite/g++.dg/some-file.c'),
+            'g++.dg/some-file.c')
+
 
 if __name__ == '__main__':
     unittest.main()
