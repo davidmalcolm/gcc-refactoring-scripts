@@ -2,7 +2,7 @@ import unittest
 
 from refactor import tabify, \
     ChangeLogLayout, ChangeLogAdditions, \
-    AUTHOR, get_change_scope, within_comment
+    AUTHOR, Source
 
 class GeneralTests(unittest.TestCase):
     def assertTabifyEquals(self, input_code, expected_result):
@@ -24,51 +24,54 @@ class GeneralTests(unittest.TestCase):
                              '\t\t   OPTGROUP_NONE,\n'))
 
     def test_get_funcname(self):
-        self.assertEqual(get_change_scope('void\n'
-                                      'foo ()\n'
-                                      '{\n'
-                                      '  int i;\n',
-                                      50),
-                         'foo')
-        self.assertEqual(get_change_scope('static void\n'
+        self.assertEqual(
+            Source('void\n'
+                   'foo ()\n'
+                   '{\n'
+                   '  int i;\n').get_change_scope_at(50),
+            'foo')
+        self.assertEqual(Source(
+            'static void\n'
             'compute_antinout_edge (sbitmap *antloc, sbitmap *transp, sbitmap *antin,\n'
             '\t\t       sbitmap *antout)\n'
             '{\n'
-            '  basic_block *worklist, *qin, *qout, *qend;\n',
-                                      4096),
+            '  basic_block *worklist, *qin, *qout, *qend;\n'
+            ).get_change_scope_at(4096),
                          'compute_antinout_edge')
 
-        self.assertEqual(get_change_scope(
+        self.assertEqual(Source(
                 '#define REG_FREQ_FROM_EDGE_FREQ(freq)	\t\t\t	   \\\n'
                 '  (optimize_size || (flag_branch_probabilities && !ENTRY_BLOCK_PTR->count) \\\n'
                 '   ? REG_FREQ_MAX : (freq * REG_FREQ_MAX / BB_FREQ_MAX)\t\t\t   \\\n'
-                '   ? (freq * REG_FREQ_MAX / BB_FREQ_MAX) : 1)\n',
-                4096),
+                '   ? (freq * REG_FREQ_MAX / BB_FREQ_MAX) : 1)\n')
+                         .get_change_scope_at(4096),
                          'REG_FREQ_FROM_EDGE_FREQ')
 
     def test_within_comment(self):
-        self.assertTrue(within_comment('/* foo', 1024))
-        self.assertFalse(within_comment('/* foo */', 1024))
-        self.assertFalse(within_comment('foo', 1024))
-        self.assertFalse(within_comment('/* foo */ /', 1024))
+        self.assertTrue(Source('/* foo').within_comment_at(1024))
+        self.assertFalse(Source('/* foo */').within_comment_at(1024))
+        self.assertFalse(Source('foo').within_comment_at(1024))
+        self.assertFalse(Source('/* foo */ /').within_comment_at(1024))
 
 class ChangeLogTests(unittest.TestCase):
-    def test_changelog_layout(self):
-        cll = ChangeLogLayout('../src')
-        self.assertIn('../src/gcc', cll.dirs)
-        self.assertIn('../src/gcc/testsuite', cll.dirs)
+    # Constructing a ChangeLogLayout is somewhat expensive, so only
+    # do it once, shared by all the cases:
+    cll = ChangeLogLayout('../src')
 
-        self.assertEqual(cll.locate_dir('../src/gcc/foo.c'),
+    def test_changelog_layout(self):
+        self.assertIn('../src/gcc', self.cll.dirs)
+        self.assertIn('../src/gcc/testsuite', self.cll.dirs)
+
+        self.assertEqual(self.cll.locate_dir('../src/gcc/foo.c'),
                          '../src/gcc')
-        self.assertEqual(cll.locate_dir('../src/gcc/c-family/foo.c'),
+        self.assertEqual(self.cll.locate_dir('../src/gcc/c-family/foo.c'),
                          '../src/gcc/c-family')
-        self.assertEqual(cll.locate_dir('../src/gcc/testsuite/gcc.target/arm/pr46631.cgcc/testsuite/foo.c'),
+        self.assertEqual(self.cll.locate_dir('../src/gcc/testsuite/gcc.target/arm/pr46631.cgcc/testsuite/foo.c'),
                          '../src/gcc/testsuite')
 
     def test_additions(self):
         TEST_ISODATE = '1066-10-14'
-        cll = ChangeLogLayout('../src')
-        cla = ChangeLogAdditions(cll, TEST_ISODATE, AUTHOR,
+        cla = ChangeLogAdditions(self.cll, TEST_ISODATE, AUTHOR,
                                  'This is some header text')
         cla.add_text('../src/gcc/foo.c',
                      '* foo.c (bar): Do something.')
@@ -94,13 +97,71 @@ class ChangeLogTests(unittest.TestCase):
              '* baz.c (quux): Do something.\n'))
 
     def test_get_relative_path(self):
-        cll = ChangeLogLayout('../src')
         self.assertEqual(
-            cll.get_path_relative_to_changelog('../src/gcc/tree-cfg.c'),
+            self.cll.get_path_relative_to_changelog('../src/gcc/tree-cfg.c'),
             'tree-cfg.c')
         self.assertEqual(
-            cll.get_path_relative_to_changelog('../src/gcc/testsuite/g++.dg/some-file.c'),
+            self.cll.get_path_relative_to_changelog('../src/gcc/testsuite/g++.dg/some-file.c'),
             'g++.dg/some-file.c')
+
+class TestWrapping(unittest.TestCase):
+    def assertWrappedCodeEquals(self, src, expected_code):
+        as_tabs = ('\t' in src)
+        actual_code = Source(src).wrap(just_changed=0).str(as_tabs=as_tabs)
+        self.maxDiff = 32768
+        self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
+
+    def assertUnchanged(self, src):
+        self.assertWrappedCodeEquals(src, src)
+
+    def test_unchanged(self):
+        # The unchanged case, with lines < 80:
+        src = (
+            '  /* Remove BB from the original basic block array.  */\n'
+            '  (*cfun->cfg->basic_block_info)[bb->index] = NULL;\n'
+            '  cfun->cfg->n_basic_blocks--;\n')
+        self.assertUnchanged(src)
+
+    def test_linewrap(self):
+        src = (
+            '			  if (best_edge->dest != cfun->cfg->entry_block_ptr->next_bb)\n')
+        expected_code = (
+            '			  if (best_edge->dest\n'
+            '			      != cfun->cfg->entry_block_ptr->next_bb)\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_linewrap2(self):
+        src = (
+            '      if ((e->src != cfun->cfg->entry_block_ptr && bbd[e->src->index].end_of_trace >= 0)\n'
+            '\t  || (e->flags & EDGE_DFS_BACK))\n')
+        expected_code = (
+            '      if ((e->src != cfun->cfg->entry_block_ptr\n'
+            '\t   && bbd[e->src->index].end_of_trace >= 0)\n'
+            '\t  || (e->flags & EDGE_DFS_BACK))\n')
+        self.assertWrappedCodeEquals(src, expected_code)
+
+    def test_overlong_(self):
+        src = (
+            '      superset_entry->children\n'
+            '        = splay_tree_new_ggc (splay_tree_compare_ints,\n'
+            '                              ggc_alloc_splay_tree_scalar_scalar_splay_tree_s,\n'
+            '                              ggc_alloc_splay_tree_scalar_scalar_splay_tree_node_s);\n')
+        # No good way of wrapping this
+        self.assertUnchanged(src)
+
+    def test_linewrap3(self):
+        src = (
+            '  if (e->src != cfun->cfg->entry_block_ptr && e->dest != cfun->cfg->exit_block_ptr\n'
+            '      && any_condjump_p (BB_END (e->src))\n'
+            '      && JUMP_LABEL (BB_END (e->src)) == BB_HEAD (e->dest))\n'
+            '    {\n')
+        expected_code = (
+            '  if (e->src != cfun->cfg->entry_block_ptr\n'
+            '      && e->dest != cfun->cfg->exit_block_ptr\n'
+            '      && any_condjump_p (BB_END (e->src))\n'
+            '      && JUMP_LABEL (BB_END (e->src)) == BB_HEAD (e->dest))\n'
+            '    {\n')
+        self.assertWrappedCodeEquals(src, expected_code)
 
 
 if __name__ == '__main__':

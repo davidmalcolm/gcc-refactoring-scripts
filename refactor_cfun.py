@@ -1,7 +1,7 @@
 from collections import namedtuple, OrderedDict
 import re
 
-from refactor import main, Changelog, get_change_scope, within_comment
+from refactor import main, Changelog
 
 class Macro(namedtuple("Macro", ("name", "pattern", "expansion"))):
     pass
@@ -61,7 +61,7 @@ def expand_cfun_macros(clog_filename, src):
                          # with an x_entry_block_ptr field:
                          'gcc.target/ia64/pr49303.c',
                          ):
-        return src, ''
+        return src.str(), ''
 
     changelog = Changelog(clog_filename)
     macros_removed_by_scope = OrderedDict()
@@ -69,13 +69,13 @@ def expand_cfun_macros(clog_filename, src):
     while 1:
         match = 0
         for macro in macros:
-            for m in re.finditer(macro.pattern, src):
+            for m in src.finditer(macro.pattern):
                 replacement = macro.expansion % m.groupdict()
                 # print(replacement)
-                if within_comment(src, m.start()):
+                if src.within_comment_at(m.start()):
                     continue
-                src = (src[:m.start()] + replacement + src[m.end():])
-                scope = get_change_scope(src, m.start())
+                src = src.replace(m.start(), m.end(), replacement)
+                scope = src.get_change_scope_at(m.start())
                 if scope in macros_removed_by_scope:
                     macros_removed_by_scope[scope].add(macro.name)
                 else:
@@ -101,13 +101,13 @@ def expand_cfun_macros(clog_filename, src):
     while 1:
         match = 0
         for old, new in field_replacements:
-            for m in re.finditer('->%s' % old, src):
+            for m in src.finditer('->%s' % old):
                 replacement = '->%s' % new
                 # print(replacement)
-                if within_comment(src, m.start()):
+                if src.within_comment_at(m.start()):
                     continue
-                src = (src[:m.start()] + replacement + src[m.end():])
-                scope = get_change_scope(src, m.start())
+                src = src.replace(m.start(), m.end(), replacement)
+                scope = src.get_change_scope_at(m.start())
                 if scope in fields_replaced_by_scope:
                     fields_replaced_by_scope[scope].add(old)
                 else:
@@ -137,10 +137,9 @@ def expand_cfun_macros(clog_filename, src):
             changelog.append('(%s): Drop leading x_ from uses of macros: %s.\n'
                              % (scope, ', '.join(field_names)))
 
-
-
     #print(src)
-    return src, changelog.content
+    src = src.wrap()
+    return src.str(), changelog.content
 
 if __name__ == '__main__':
     main('refactor_cfun.py', expand_cfun_macros)

@@ -10,25 +10,6 @@ import textwrap
 ############################################################################
 # Generic hooks
 ############################################################################
-FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \(.*\)\n{'
-MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*\)\s+\\\n'
-def get_change_scope(src, idx):
-    src = src[:idx]
-    m = re.search(FUNC_PATTERN, src, re.MULTILINE | re.DOTALL)
-    if m:
-        return m.groupdict()['FUNCNAME']
-    m = re.search(MACRO_PATTERN, src, re.MULTILINE | re.DOTALL)
-    if m:
-        return m.groupdict()['MACRO']
-
-def within_comment(src, idx):
-    src = src[:idx]
-    final_open_comment = src.rfind('/*')
-    if final_open_comment == -1:
-        return False
-    src = src[final_open_comment:]
-    return '*/' not in src
-
 class ChangeLogLayout:
     """
     A collection of ChangeLog files in a directory hierarchy, thus
@@ -149,18 +130,174 @@ def tabify(s):
     return '\n'.join([tabify_line(line)
                       for line in lines])
 
+def untabify(s):
+    """
+    Convert str s from tab-based indentation to space-based, assuming 8-space
+    tabs
+    """
+    return s.expandtabs(8)
+
+class Source:
+    def __init__(self, s, changes=None):
+        # Work in a space-based representation to make wordwrapping easier:
+        s = untabify(s)
+        self._str = s
+
+        # self.changes: set of indices where changes have happened
+        if changes:
+            self.changes = changes
+        else:
+            self.changes = set()
+
+    def str(self, as_tabs=1):
+        # Convert back to tab-based representation on output:
+        if as_tabs:
+            return tabify(self._str)
+        else:
+            return self._str
+
+    def show_changes(self):
+        sys.stdout.write('\n\n')
+        sys.stdout.write(self._str)
+        for i, ch in enumerate(self._str):
+            if ch == '\n':
+                sys.stdout.write('\n')
+            else:
+                sys.stdout.write('*'
+                                 if i in self.changes
+                                 else (' '
+                                       if ch.isspace()
+                                       else '.'))
+
+    def finditer(self, pattern):
+        return re.finditer(pattern, self._str)
+
+    def replace(self, from_idx, to_idx, replacement):
+        # Inherit changes from before the replacement:
+        changes = set([idx
+                       for idx in self.changes
+                       if idx < from_idx])
+        # Everything within the replacement is regarded as changed:
+        changes |= set([from_idx + i
+                       for i in range(len(replacement))])
+        # Inherit changes from after the replacement, offsetting
+        # by the new location:
+        changes |= set([from_idx + len(replacement) + (idx - to_idx)
+                        for idx in self.changes
+                        if idx >= to_idx])
+        result =  Source(self._str[:from_idx] + replacement + self._str[to_idx:],
+                         changes)
+        #result.show_changes()
+        return result
+
+    def within_comment_at(self, idx):
+        src = self._str[:idx]
+        final_open_comment = src.rfind('/*')
+        if final_open_comment == -1:
+            return False
+        src = src[final_open_comment:]
+        return '*/' not in src
+
+    FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \(.*\)\n{'
+    MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*\)\s+\\\n'
+    def get_change_scope_at(self, idx):
+        src = self._str[:idx]
+        m = re.search(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL)
+        if m:
+            return m.groupdict()['FUNCNAME']
+        m = re.search(self.MACRO_PATTERN, src, re.MULTILINE | re.DOTALL)
+        if m:
+            return m.groupdict()['MACRO']
+
+    def get_changed_lines(self):
+        """
+        Get a list of (line, touched) pairs i.e. (str, bool) pairs
+        """
+        result = []
+        line = ''
+        touched = False
+        for i, ch in enumerate(self._str):
+            if ch == '\n':
+                result.append( (line, touched) )
+                line = ''
+                touched = False
+            else:
+                line += ch
+                if i in self.changes:
+                    touched = True
+        if line:
+            result.append( (line, touched) )
+        return result
+
+    def wrap(self, just_changed=1):
+        # See http://www.gnu.org/prep/standards/standards.html#Formatting
+        new_lines = []
+        old_lines = self.get_changed_lines()
+        for line, touched in old_lines:
+            if touched or not just_changed:
+                while len(line) > 80:
+                    wrapped, remainder = self._get_split_point(line)
+                    if wrapped:
+                        new_lines.append(wrapped)
+                        line = self._indent(remainder, new_lines)
+                    else:
+                        # No wrapping was possible:
+                        break
+            new_lines.append(line)
+        return Source(('\n'.join(new_lines)) + '\n')
+
+    def _get_split_point(self, line, max_length=80):
+        """
+        Calculate the best split of the line
+        """
+        split_at = max_length
+        while line[split_at] != ' ':
+            split_at -= 1
+
+        # Break before operators:
+        if line[:split_at][-3:] in (' ==', ' !='):
+            split_at -= 3
+            newline = line[:split_at]
+            if ' &&' in newline:
+                split_at = newline.rfind(' &&')
+            elif ' ""' in newline:
+                split_at = newline.rfind(' ||')
+
+        if line[:split_at][-3:] in (' &&', ' ||'):
+            split_at -= 3
+
+        assert line[split_at] == ' '
+
+        # Omit the whitespace char at the split:
+        wrapped, remainder = line[:split_at], line[(split_at + 1):]
+        if wrapped.isspace():
+            # No wrapping is possible:
+            return '', line
+        return wrapped, remainder
+
+    def _indent(self, line, previous_lines):
+        """
+        Indent the content of line according to the context given
+        in previous_lines
+        """
+        last_line = previous_lines[-1]
+        if '(' in last_line:
+            indent = last_line.rfind('(') + 1
+            return (' ' * indent) + line
+        else:
+            return line
 
 def refactor_file(path, relative_path, refactoring, printdiff,
                   applychanges):
     with open(path) as f:
-        src = f.read()
+        src = Source(f.read())
     #print(src)
     assert path.startswith('../src/gcc/')
     dst, changelog = refactoring(relative_path, src)
     #print(dst)
 
     if printdiff:
-        for line in unified_diff(src.splitlines(),
+        for line in unified_diff(src.str().splitlines(),
                                  dst.splitlines(),
                                  fromfile=path, tofile=path):
             sys.stdout.write('%s\n' % line)

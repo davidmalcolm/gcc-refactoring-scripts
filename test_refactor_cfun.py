@@ -1,6 +1,6 @@
 import unittest
 
-from refactor import wrap
+from refactor import wrap, Source
 from refactor_cfun import expand_cfun_macros
 
 def make_expected_changelog(filename, scope, text):
@@ -10,13 +10,13 @@ class MacroTests(unittest.TestCase):
     def assertRefactoredCodeEquals(self,
                                    src, filename,
                                    expected_code):
-        actual_code, actual_changelog = expand_cfun_macros(filename, src)
+        actual_code, actual_changelog = expand_cfun_macros(filename, Source(src))
         self.maxDiff = 32768
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
     def assertRefactoringEquals(self,
                                 src, filename,
                                 expected_code, expected_changelog):
-        actual_code, actual_changelog = expand_cfun_macros(filename, src)
+        actual_code, actual_changelog = expand_cfun_macros(filename, Source(src))
         self.maxDiff = 8192
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
         self.assertMultiLineEqual(expected_changelog, actual_changelog) # 2.7+
@@ -25,9 +25,9 @@ class MacroTests(unittest.TestCase):
 
     def test_ENTRY_BLOCK_PTR(self):
         src = (
-            '    FOR_EACH_EDGE (e, ei, ENTRY_BLOCK_PTR->succs)')
+            '    FOR_EACH_EDGE (e, ei, ENTRY_BLOCK_PTR->succs)\n')
         expected_code = (
-            '    FOR_EACH_EDGE (e, ei, cfun->cfg->entry_block_ptr->succs)')
+            '    FOR_EACH_EDGE (e, ei, cfun->cfg->entry_block_ptr->succs)\n')
         expected_changelog = \
             '\t* bb-reorder.c (None): Remove usage of ENTRY_BLOCK_PTR macro.\n'
         self.assertRefactoringEquals(src, 'bb-reorder.c',
@@ -35,9 +35,9 @@ class MacroTests(unittest.TestCase):
 
     def test_n_basic_blocks(self):
         src = (
-            'rpo = XNEWVEC (int, n_basic_blocks);')
+            'rpo = XNEWVEC (int, n_basic_blocks);\n')
         expected_code = (
-            'rpo = XNEWVEC (int, cfun->cfg->n_basic_blocks);')
+            'rpo = XNEWVEC (int, cfun->cfg->n_basic_blocks);\n')
         expected_changelog = make_expected_changelog('alias.c', 'None',
                                                      'Remove usage of n_basic_blocks macro.')
         self.assertRefactoredCodeEquals(src, 'alias.c',
@@ -99,20 +99,20 @@ class MacroTests(unittest.TestCase):
             'init_alias_analysis (void)\n'
             '{\n'
             '...\n'
-            'basic_block bb = BASIC_BLOCK (rpo[i]);')
+            'basic_block bb = BASIC_BLOCK (rpo[i]);\n')
         expected_code = (
             'void\n'
             'init_alias_analysis (void)\n'
             '{\n'
             '...\n'
-            'basic_block bb = cfun->cfg->get_bb (rpo[i]);')
+            'basic_block bb = cfun->cfg->get_bb (rpo[i]);\n')
         expected_changelog = (
             '\t* alias.c (init_alias_analysis): Remove usage of BASIC_BLOCK macro.\n')
         self.assertRefactoringEquals(src, 'alias.c',
                                      expected_code, expected_changelog)
 
     def test_NOTE_BASIC_BLOCK(self):
-        self.assertUnchanged('NOTE_BASIC_BLOCK (note) = bb;', 'cfgexpand.c')
+        self.assertUnchanged('NOTE_BASIC_BLOCK (note) = bb;\n', 'cfgexpand.c')
 
     def test_profile_status(self):
         src = (
@@ -134,14 +134,16 @@ class MacroTests(unittest.TestCase):
 
     def test_profile_status_for_function(self):
         self.assertUnchanged(
-            '  if (profile_status_for_function (fun) == PROFILE_ABSENT)',
+            '  if (profile_status_for_function (fun) == PROFILE_ABSENT)\n',
             'predict.c')
 
     def test_REG_FREQ_FROM_BB(self):
         src = (
-            '  && !ENTRY_BLOCK_PTR->count)\t\t\\')
+            '|| (flag_branch_probabilities\t\t\\\n'
+            '    && !ENTRY_BLOCK_PTR->count)\t\t\\\n')
         expected_code = (
-            '  && !cfun->cfg->entry_block_ptr->count)\t\t\\')
+            '|| (flag_branch_probabilities\t\t\\\n'
+            '    && !cfun->cfg->entry_block_ptr->count)\t\t\\\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'regs.h',
                                         expected_code)
@@ -202,7 +204,8 @@ class MacroTests(unittest.TestCase):
         expected_code = (
             '  /* ENTRY_BLOCK_PTR/EXIT_BLOCK_PTR depend on cfun.\n'
             '     Compare against ENTRY_BLOCK/EXIT_BLOCK to avoid that dependency.  */\n'
-            '       FOR_BB_BETWEEN (bb, cfun->cfg->entry_block_ptr, cfun->cfg->exit_block_ptr, next_bb)\n')
+            '       FOR_BB_BETWEEN (bb, cfun->cfg->entry_block_ptr,\n'
+            '\t\t       cfun->cfg->exit_block_ptr, next_bb)\n')
         self.assertRefactoredCodeEquals(src, 'cfg.c',
                                         expected_code)
 
@@ -259,8 +262,54 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'testsuite/gcc.dg/plugin/selfassign.c',
                                      expected_code, expected_changelog)
 
+    def test_linewrap(self):
+        src = (
+            '			  if (best_edge->dest != ENTRY_BLOCK_PTR->next_bb)\n')
+        expected_code = (
+            '			  if (best_edge->dest\n'
+            '			      != cfun->cfg->entry_block_ptr->next_bb)\n')
+        self.assertRefactoredCodeEquals(src, 'bb-reorder.c',
+                                        expected_code)
 
+    def test_linewrap2(self):
+        src = (
+            '      if ((e->src != ENTRY_BLOCK_PTR && bbd[e->src->index].end_of_trace >= 0)\n'
+            '\t  || (e->flags & EDGE_DFS_BACK))\n')
+        expected_code = (
+            '      if ((e->src != cfun->cfg->entry_block_ptr\n'
+            '\t   && bbd[e->src->index].end_of_trace >= 0)\n'
+            '\t  || (e->flags & EDGE_DFS_BACK))\n')
+        self.assertRefactoredCodeEquals(src, 'bb-reorder.c',
+                                        expected_code)
 
+    def test_no_linewrap(self):
+        # Only linewrapping on lines that we changed, so this pre-existing
+        # overlong line shouldn't get linewrapped:
+        self.assertUnchanged(
+            '    case TRUNCATE:\n'
+            '      /* As we do not know which address space the pointer is referring to, we can\n'
+            '	 handle this only if the target does not support different pointer or\n'
+            '	 address modes depending on the address space.  */\n',
+            'alias.c')
+
+    def test_linewrap3(self):
+        # Ensure that we split at:
+        #    "&& foo != bar\n"
+        # rather than at:
+        #    "!= bar\n"
+        src = (
+            '  if (e->src != ENTRY_BLOCK_PTR && e->dest != EXIT_BLOCK_PTR\n'
+            '      && any_condjump_p (BB_END (e->src))\n'
+            '      && JUMP_LABEL (BB_END (e->src)) == BB_HEAD (e->dest))\n'
+            '    {\n')
+        expected_code = (
+            '  if (e->src != cfun->cfg->entry_block_ptr\n'
+            '      && e->dest != cfun->cfg->exit_block_ptr\n'
+            '      && any_condjump_p (BB_END (e->src))\n'
+            '      && JUMP_LABEL (BB_END (e->src)) == BB_HEAD (e->dest))\n'
+            '    {\n')
+        self.assertRefactoredCodeEquals(src, 'cfgrtl.c',
+                                        expected_code)
 
 if __name__ == '__main__':
     unittest.main()
