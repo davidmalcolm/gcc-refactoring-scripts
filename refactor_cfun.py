@@ -72,7 +72,7 @@ def expand_cfun_macros(clog_filename, src):
                          # with an x_entry_block_ptr field:
                          'gcc.target/ia64/pr49303.c',
                          ):
-        return src.str(as_tabs=0), ''
+        return src.str(as_tabs=0), Changelog(clog_filename)
     tabify_changes = '\t' in src._str
 
     changelog = Changelog(clog_filename)
@@ -164,7 +164,7 @@ def expand_cfun_macros(clog_filename, src):
 
     #print(src)
     src = src.wrap(tabify_changes=tabify_changes)
-    return src.str(as_tabs=0), changelog.content
+    return src.str(as_tabs=0), changelog
 
 if __name__ == '__main__':
     # Just n_basic_blocks for now:

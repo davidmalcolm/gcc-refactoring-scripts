@@ -49,23 +49,27 @@ class ChangeLogAdditions:
         self.headertext = headertext
         # Mapping from directory
         self.text_per_dir = {}
+        self._lasttext_per_dir = {}
 
-    def add_text(self, path, filetext):
+    def add_file(self, path, clog):
         """
-        Add text about a file at a given path to the appropriate
-        ChangeLog, potentially adding a header if this is the first
-        touch that this refactoring has made to that ChangeLog
+        Add Changelog instance about a file at a given path to the
+        appropriate ChangeLog, potentially adding a header if this is the
+        first touch that this refactoring has made to that ChangeLog
         """
+        dir_ = self.cll.locate_dir(path)
+        lasttext = self._lasttext_per_dir.get(dir_, None)
+        filetext, self._lasttext_per_dir[dir_] = clog.as_text(lasttext)
         if not filetext:
             return
-        dir_ = self.cll.locate_dir(path)
+        assert filetext.endswith('\n')
         if dir_ not in self.text_per_dir:
             header = '%s  %s  <%s>' % (self.isodate,
                                        self.author.name,
                                        self.author.email)
             self.text_per_dir[dir_] = (header + '\n\n'
                                        + self.headertext + '\n')
-        self.text_per_dir[dir_] += filetext + '\n'
+        self.text_per_dir[dir_] += filetext
 
     def apply(self, printdiff):
         """
@@ -75,7 +79,7 @@ class ChangeLogAdditions:
             filename = os.path.join(dir_, 'ChangeLog')
             with open(filename, 'r') as f:
                 old_contents = f.read()
-            new_contents = self.text_per_dir[dir_] + old_contents
+            new_contents = self.text_per_dir[dir_] + '\n' + old_contents
             if printdiff:
                 for line in unified_diff(old_contents.splitlines(),
                                          new_contents.splitlines(),
@@ -93,15 +97,22 @@ class Changelog:
         self.filename = filename
         self.scope_to_text = OrderedDict()
 
-    @property
-    def content(self):
+    def as_text(self, lasttext):
+        """
+        Generate textual form of log, potentially abbreviating successive
+        duplicate entries to "Likewise."
+        """
         result = ''
         for scope, text in self.scope_to_text.iteritems():
+            if text == lasttext:
+                text = 'Likewise.'
+            else:
+                lasttext = text
             if result == '':
                 result += wrap('* %s (%s): %s\n' % (self.filename, scope, text))
             else:
                 result += wrap('(%s): %s\n' % (scope, text))
-        return result
+        return result, lasttext
 
     def append(self, scope, text):
         assert text.endswith('.')
@@ -368,6 +379,7 @@ def refactor_file(path, relative_path, refactoring, printdiff,
     #print(src)
     assert path.startswith('../src/gcc/')
     dsttext, changelog = refactoring(relative_path, srcobj)
+    assert isinstance(changelog, Changelog)
     #print(dst)
 
     if printdiff:
@@ -408,22 +420,24 @@ def main(script, refactoring, argv):
                          path.endswith('.h')):
                 print(path)
                 relative_path = cll.get_path_relative_to_changelog(path)
-                clogtext = refactor_file(path,
-                                         relative_path,
-                                         refactoring,
-                                         printdiff=True,
-                                         applychanges=True)
-                cla.add_text(path, clogtext)
+                changelog = refactor_file(path,
+                                          relative_path,
+                                          refactoring,
+                                          printdiff=True,
+                                          applychanges=True)
+                assert isinstance(changelog, Changelog)
+                cla.add_file(path, changelog)
     if len(argv) > 1:
         for path in argv[1:]:
             print(path)
             relative_path = cll.get_path_relative_to_changelog(path)
-            clogtext = refactor_file(path,
-                                     relative_path,
-                                     refactoring,
-                                     printdiff=True,
-                                     applychanges=True)
-            cla.add_text(path, clogtext)
+            changelog = refactor_file(path,
+                                      relative_path,
+                                      refactoring,
+                                      printdiff=True,
+                                      applychanges=True)
+            assert isinstance(changelog, Changelog)
+            cla.add_file(path, changelog)
     else:
         os.path.walk('../src/gcc', visit, None)
     cla.apply(printdiff=True)

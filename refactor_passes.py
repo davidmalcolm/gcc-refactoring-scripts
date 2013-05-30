@@ -334,7 +334,7 @@ def refactor_pass_initializers(filename, src):
         # no matches:
         break
 
-    return src, changelog.content
+    return src, changelog
 
 if __name__ == '__main__':
     main('refactor_passes.py', refactor_pass_initializers, sys.argv)

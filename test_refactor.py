@@ -1,7 +1,7 @@
 import unittest
 
 from refactor import tabify, \
-    ChangeLogLayout, ChangeLogAdditions, \
+    ChangeLogLayout, ChangeLogAdditions, Changelog, \
     AUTHOR, Source
 
 class GeneralTests(unittest.TestCase):
@@ -86,28 +86,36 @@ class ChangeLogTests(unittest.TestCase):
         TEST_ISODATE = '1066-10-14'
         cla = ChangeLogAdditions(self.cll, TEST_ISODATE, AUTHOR,
                                  'This is some header text')
-        cla.add_text('../src/gcc/foo.c',
-                     '* foo.c (bar): Do something.')
-        cla.add_text('../src/gcc/bar.c',
-                     '* bar.c (some_fn): Likewise.')
-        cla.add_text('../src/gcc/testsuite/baz.c',
-                     '* baz.c (quux): Do something.')
-        cla.add_text('../src/gcc/testsuite/some-other-file.c',
-                     '') # should have no effect
+        clog_foo = Changelog('foo.c')
+        clog_foo.append('bar', 'Do something.')
+        cla.add_file('../src/gcc/foo.c', clog_foo)
+
+        clog_bar = Changelog('bar.c')
+        clog_bar.append('some_fn', 'Do something.')
+        cla.add_file('../src/gcc/bar.c', clog_bar)
+
+        clog_baz = Changelog('baz.c')
+        clog_baz.append('quux', 'Do something.')
+        cla.add_file('../src/gcc/testsuite/baz.c', clog_baz)
+
+        clog_dummy = Changelog('some-other-file.c')
+        cla.add_file('../src/gcc/testsuite/some-other-file.c', clog_dummy)
+        # ^^^ should have no effect
+
         self.maxDiff = 8192
         self.assertMultiLineEqual(
             cla.text_per_dir['../src/gcc'],
             ('1066-10-14  David Malcolm  <dmalcolm@redhat.com>\n'
              '\n'
              'This is some header text\n'
-             '* foo.c (bar): Do something.\n'
-             '* bar.c (some_fn): Likewise.\n'))
+             '\t* foo.c (bar): Do something.\n'
+             '\t* bar.c (some_fn): Likewise.\n'))
         self.assertMultiLineEqual(
             cla.text_per_dir['../src/gcc/testsuite'],
             ('1066-10-14  David Malcolm  <dmalcolm@redhat.com>\n'
              '\n'
              'This is some header text\n'
-             '* baz.c (quux): Do something.\n'))
+             '\t* baz.c (quux): Do something.\n'))
 
     def test_get_relative_path(self):
         self.assertEqual(

@@ -9,7 +9,8 @@ class PassConversionTests(unittest.TestCase):
         actual_code, actual_changelog = refactor_pass_initializers(filename, src)
         self.maxDiff = 8192
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
-        self.assertMultiLineEqual(expected_changelog, actual_changelog) # 2.7+
+        self.assertMultiLineEqual(expected_changelog,
+                                  actual_changelog.as_text(None)[0]) # 2.7+
 
     def test_pass_jump2(self):
         src = r"""
