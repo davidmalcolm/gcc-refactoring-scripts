@@ -1,5 +1,6 @@
 from collections import namedtuple, OrderedDict
 import re
+import sys
 
 from refactor import main, Changelog
 
@@ -51,6 +52,16 @@ macros = \
            'FOR_EACH_BB_REVERSE (%(BB)s, cfun->cfg)'),
                             ]
 
+field_replacements = \
+    ( ('x_entry_block_ptr', 'entry_block_ptr'),
+      ('x_exit_block_ptr', 'exit_block_ptr'),
+      ('x_basic_block_info', 'basic_block_info'),
+      ('x_n_basic_blocks', 'n_basic_blocks'),
+      ('x_n_edges', 'n_edges'),
+      ('x_last_basic_block', 'last_basic_block'),
+      ('x_label_to_block_map', 'label_to_block_map'),
+      ('x_profile_status', 'profile_status') )
+
 def expand_cfun_macros(clog_filename, src):
     if clog_filename in ('basic-block.h',
 
@@ -61,7 +72,8 @@ def expand_cfun_macros(clog_filename, src):
                          # with an x_entry_block_ptr field:
                          'gcc.target/ia64/pr49303.c',
                          ):
-        return src.str(), ''
+        return src.str(as_tabs=0), ''
+    tabify_changes = '\t' in src._str
 
     changelog = Changelog(clog_filename)
     macros_removed_by_scope = OrderedDict()
@@ -93,15 +105,6 @@ def expand_cfun_macros(clog_filename, src):
                 break
         if not match:
             break
-    field_replacements = \
-        ( ('x_entry_block_ptr', 'entry_block_ptr'),
-          ('x_exit_block_ptr', 'exit_block_ptr'),
-          ('x_basic_block_info', 'basic_block_info'),
-          ('x_n_basic_blocks', 'n_basic_blocks'),
-          ('x_n_edges', 'n_edges'),
-          ('x_last_basic_block', 'last_basic_block'),
-          ('x_label_to_block_map', 'label_to_block_map'),
-          ('x_profile_status', 'profile_status') )
 
     while 1:
         match = 0
@@ -156,8 +159,15 @@ def expand_cfun_macros(clog_filename, src):
                               % ', '.join(field_names)))
 
     #print(src)
-    src = src.wrap()
-    return src.str(), changelog.content
+    src = src.wrap(tabify_changes=tabify_changes)
+    return src.str(as_tabs=0), changelog.content
 
 if __name__ == '__main__':
-    main('refactor_cfun.py', expand_cfun_macros)
+    # Just n_basic_blocks for now:
+    macros = [macro
+              for macro in macros
+              if macro.name == 'n_basic_blocks']
+    field_replacements = [(old, new)
+                          for (old, new) in field_replacements
+                          if new == 'n_basic_blocks']
+    main('refactor_cfun.py', expand_cfun_macros, sys.argv)

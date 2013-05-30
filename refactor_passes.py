@@ -1,5 +1,6 @@
 from collections import namedtuple
 import re
+import sys
 
 from refactor import main, Changelog, tabify
 
@@ -336,4 +337,4 @@ def refactor_pass_initializers(filename, src):
     return src, changelog.content
 
 if __name__ == '__main__':
-    main('refactor_passes.py', refactor_pass_initializers)
+    main('refactor_passes.py', refactor_pass_initializers, sys.argv)

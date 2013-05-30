@@ -143,7 +143,7 @@ class MacroTests(unittest.TestCase):
             '    && !ENTRY_BLOCK_PTR->count)\t\t\\\n')
         expected_code = (
             '|| (flag_branch_probabilities\t\t\\\n'
-            '    && !cfun->cfg->entry_block_ptr->count)\t\t\\\n')
+            '    && !cfun->cfg->entry_block_ptr->count)              \\\n')
         expected_changelog = ''
         self.assertRefactoredCodeEquals(src, 'regs.h',
                                         expected_code)
@@ -205,7 +205,7 @@ class MacroTests(unittest.TestCase):
             '  /* ENTRY_BLOCK_PTR/EXIT_BLOCK_PTR depend on cfun.\n'
             '     Compare against ENTRY_BLOCK/EXIT_BLOCK to avoid that dependency.  */\n'
             '       FOR_BB_BETWEEN (bb, cfun->cfg->entry_block_ptr,\n'
-            '\t\t       cfun->cfg->exit_block_ptr, next_bb)\n')
+            '                       cfun->cfg->exit_block_ptr, next_bb)\n')
         self.assertRefactoredCodeEquals(src, 'cfg.c',
                                         expected_code)
 

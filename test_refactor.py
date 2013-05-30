@@ -107,7 +107,10 @@ class ChangeLogTests(unittest.TestCase):
 class TestWrapping(unittest.TestCase):
     def assertWrappedCodeEquals(self, src, expected_code):
         as_tabs = ('\t' in src)
-        actual_code = Source(src).wrap(just_changed=0).str(as_tabs=as_tabs)
+        srcobj = Source(src)
+        srcobj = srcobj.wrap(just_changed=0,
+                             tabify_changes=as_tabs)
+        actual_code = srcobj.str(as_tabs=0)
         self.maxDiff = 32768
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
 
@@ -124,10 +127,10 @@ class TestWrapping(unittest.TestCase):
 
     def test_linewrap(self):
         src = (
-            '			  if (best_edge->dest != cfun->cfg->entry_block_ptr->next_bb)\n')
+            '                      if (best_edge->dest != cfun->cfg->entry_block_ptr->next_bb)\n')
         expected_code = (
-            '			  if (best_edge->dest\n'
-            '			      != cfun->cfg->entry_block_ptr->next_bb)\n')
+            '                      if (best_edge->dest\n'
+            '                          != cfun->cfg->entry_block_ptr->next_bb)\n')
         self.assertWrappedCodeEquals(src, expected_code)
 
     def test_linewrap2(self):

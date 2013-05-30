@@ -122,6 +122,7 @@ def wrap(text):
     return result
 
 def tabify_line(line):
+    assert '\t' not in line
     stripped = line.lstrip()
     indent = len(line) - len(stripped)
     tabs = indent / 8
@@ -148,8 +149,6 @@ def untabify(s):
 
 class Source:
     def __init__(self, s, changes=None):
-        # Work in a space-based representation to make wordwrapping easier:
-        s = untabify(s)
         self._str = s
 
         # self.changes: set of indices where changes have happened
@@ -158,8 +157,8 @@ class Source:
         else:
             self.changes = set()
 
-    def str(self, as_tabs=1):
-        # Convert back to tab-based representation on output:
+    def str(self, as_tabs=0):
+        # Convert to tab-based representation on output:
         if as_tabs:
             return tabify(self._str)
         else:
@@ -238,12 +237,13 @@ class Source:
             result.append( (line, touched) )
         return result
 
-    def wrap(self, just_changed=1):
+    def wrap(self, just_changed=1, tabify_changes=1):
         # See http://www.gnu.org/prep/standards/standards.html#Formatting
         new_lines = []
         old_lines = self.get_changed_lines()
         for line, touched in old_lines:
             if touched or not just_changed:
+                line = untabify(line)
                 while len(line) > 80:
                     # Add parens to changed long lines with ternary ? : that
                     # lack them:
@@ -256,13 +256,18 @@ class Source:
                             gd['condition'] = '(%s)' % gd['condition']
                         line = ('%(lhs)s = (%(condition)s'
                                 ' ? %(on_true)s : %(on_false)s);' % gd)
+
                     wrapped, remainder = self._get_split_point(line)
                     if wrapped:
+                        if tabify_changes:
+                            wrapped = tabify(wrapped)
                         new_lines.append(wrapped)
                         line = self._indent(remainder, new_lines)
                     else:
                         # No wrapping was possible:
                         break
+                if tabify_changes:
+                    line = tabify(line)
             new_lines.append(line)
         return Source(('\n'.join(new_lines)) + '\n')
 
@@ -270,6 +275,7 @@ class Source:
         """
         Calculate the best split of the line
         """
+        assert '\t' not in line
         def _at_invocation():
             # Avoid breaking invocations:
             if line[split_at:][:2] == ' (':
@@ -311,9 +317,12 @@ class Source:
         Indent the content of line according to the context given
         in previous_lines
         """
+        assert '\t' not in line
         def _get_opening(_line):
             # Track the open parens and their locations in last_line using
             # a stack:
+            _line = untabify(_line)
+            assert '\t' not in _line
             stack = []
             for i, ch in enumerate(_line):
                 if ch in '[({':
@@ -345,20 +354,21 @@ class Source:
 def refactor_file(path, relative_path, refactoring, printdiff,
                   applychanges):
     with open(path) as f:
-        src = Source(f.read())
+        srctext = f.read()
+        srcobj = Source(srctext)
     #print(src)
     assert path.startswith('../src/gcc/')
-    dst, changelog = refactoring(relative_path, src)
+    dsttext, changelog = refactoring(relative_path, srcobj)
     #print(dst)
 
     if printdiff:
-        for line in unified_diff(src.str().splitlines(),
-                                 dst.splitlines(),
+        for line in unified_diff(srctext.splitlines(),
+                                 dsttext.splitlines(),
                                  fromfile=path, tofile=path):
             sys.stdout.write('%s\n' % line)
-    if applychanges and src != dst:
+    if applychanges and srctext != dsttext:
         with open(path, 'w') as f:
-            f.write(dst)
+            f.write(dsttext)
 
     return changelog
 
@@ -371,7 +381,7 @@ def get_revision():
 AUTHOR = Author('David Malcolm', 'dmalcolm@redhat.com')
 GIT_URL = 'https://github.com/davidmalcolm/gcc-refactoring-scripts'
 
-def main(script, refactoring):
+def main(script, refactoring, argv):
     cll = ChangeLogLayout('../src')
 
     revision = get_revision()
@@ -395,8 +405,16 @@ def main(script, refactoring):
                                          printdiff=True,
                                          applychanges=True)
                 cla.add_text(path, clogtext)
-    os.path.walk('../src/gcc', visit, None)
+    if len(argv) > 1:
+        for path in argv[1:]:
+            print(path)
+            relative_path = cll.get_path_relative_to_changelog(path)
+            clogtext = refactor_file(path,
+                                     relative_path,
+                                     refactoring,
+                                     printdiff=True,
+                                     applychanges=True)
+            cla.add_text(path, clogtext)
+    else:
+        os.path.walk('../src/gcc', visit, None)
     cla.apply(printdiff=True)
-
-if __name__ == '__main__':
-    main('refactor.py', refactor_pass_initializers)
