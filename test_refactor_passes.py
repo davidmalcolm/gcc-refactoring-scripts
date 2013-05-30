@@ -1,12 +1,13 @@
 import unittest
 
+from refactor import Source
 from refactor_passes import refactor_pass_initializers
 
 class PassConversionTests(unittest.TestCase):
     def assertRefactoringEquals(self,
                                 src, filename,
                                 expected_code, expected_changelog):
-        actual_code, actual_changelog = refactor_pass_initializers(filename, src)
+        actual_code, actual_changelog = refactor_pass_initializers(filename, Source(src))
         self.maxDiff = 8192
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
         self.assertMultiLineEqual(expected_changelog,

@@ -191,6 +191,9 @@ class Source:
     def finditer(self, pattern):
         return re.finditer(pattern, self._str)
 
+    def search(self, pattern):
+        return re.search(pattern, self._str)
+
     def replace(self, from_idx, to_idx, replacement):
         # Inherit changes from before the replacement:
         changes = set([idx

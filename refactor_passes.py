@@ -305,36 +305,36 @@ def make_replacement2(pi, extra, changelog):
 def refactor_pass_initializers(filename, src):
     changelog = Changelog(filename)
     while 1:
-        m = pattern.search(src)
+        m = src.search(pattern)
         if m:
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
             replacement = make_replacement(pi, changelog)
-            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
+            src = src.replace(m.start(), m.end(), tabify(replacement))
             continue
 
-        m = pattern2.search(src)
+        m = src.search(pattern2)
         if m:
             gd = m.groupdict()
             pi = parse_basic_fields(gd)
             extra = parse_extra_fields(gd)
             replacement = make_replacement2(pi, extra, changelog)
-            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
+            src = src.replace(m.start(), m.end(), tabify(replacement))
             continue
 
-        m = pattern3.search(src)
+        m = src.search(pattern3)
         if m:
             gd = m.groupdict()
             replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
             changelog.append('struct %(passkind)s %(passname)s' % gd,
                              'Replace declaration with that of new function make_%(passname)s.' % gd)
-            src = (src[:m.start()] + tabify(replacement) + src[m.end():])
+            src = src.replace(m.start(), m.end(), tabify(replacement))
             continue
 
         # no matches:
         break
 
-    return src, changelog
+    return src.str(as_tabs=0), changelog
 
 if __name__ == '__main__':
     main('refactor_passes.py', refactor_pass_initializers, sys.argv)
