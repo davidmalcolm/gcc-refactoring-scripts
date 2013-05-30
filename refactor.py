@@ -206,14 +206,23 @@ class Source:
         src = src[final_open_comment:]
         return '*/' not in src
 
-    FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \(.*\)\n{'
-    MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*\)\s+\\\n'
+    def within_string_literal_at(self, idx):
+        # Have we seen an odd number of quotes?
+        # This doesn't handle escaped quotes, and quotes within comments
+        return self._str[:idx].count('"') % 2
+
+    FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \((?P<PARAMS>.*?)\)\n{'
+    MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*?\)\s+\\\n'
     def get_change_scope_at(self, idx):
         src = self._str[:idx]
-        m = re.search(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL)
+        # Get last matches, if any:
+        m = None
+        for m in re.finditer(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
         if m:
             return m.groupdict()['FUNCNAME']
-        m = re.search(self.MACRO_PATTERN, src, re.MULTILINE | re.DOTALL)
+        for m in re.finditer(self.MACRO_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
         if m:
             return m.groupdict()['MACRO']
 

@@ -38,6 +38,19 @@ class GeneralTests(unittest.TestCase):
             '  basic_block *worklist, *qin, *qout, *qend;\n'
             ).get_change_scope_at(4096),
                          'compute_antinout_edge')
+        # Ensure we correctly handle multiple functions:
+        self.assertEqual(Source(
+            'static void\n'
+            'bar (void)\n'
+            '{\n'
+            '}\n'
+            '\n'
+            'static void\n'
+            'baz (void)\n'
+            '{\n'
+            '}\n'
+            ).get_change_scope_at(4096),
+                         'baz')
 
         self.assertEqual(Source(
                 '#define REG_FREQ_FROM_EDGE_FREQ(freq)	\t\t\t	   \\\n'

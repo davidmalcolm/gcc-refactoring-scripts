@@ -311,5 +311,21 @@ class MacroTests(unittest.TestCase):
         self.assertRefactoredCodeEquals(src, 'cfgrtl.c',
                                         expected_code)
 
+    def test_within_string_literal(self):
+        # the n_basic_blocks within the string literal should *not* be
+        # converted
+        src = (
+            '  if (num_bb_notes != n_basic_blocks - NUM_FIXED_BLOCKS)\n'
+            '    internal_error\n'
+            '      ("number of bb notes in insn chain (%d) != n_basic_blocks (%d)",\n'
+            '       num_bb_notes, n_basic_blocks);\n')
+        expected_code = (
+            '  if (num_bb_notes != cfun->cfg->n_basic_blocks - NUM_FIXED_BLOCKS)\n'
+            '    internal_error\n'
+            '      ("number of bb notes in insn chain (%d) != n_basic_blocks (%d)",\n'
+            '       num_bb_notes, cfun->cfg->n_basic_blocks);\n')
+        self.assertRefactoredCodeEquals(src, 'cfgrtl.c',
+                                        expected_code)
+
 if __name__ == '__main__':
     unittest.main()

@@ -87,6 +87,8 @@ def expand_cfun_macros(clog_filename, src):
                 # print(replacement)
                 if src.within_comment_at(m.start()):
                     continue
+                if src.within_string_literal_at(m.start()):
+                    continue
                 src = src.replace(m.start(), m.end(), replacement)
                 scope = src.get_change_scope_at(m.start())
                 if macro.name.startswith('FOR_'):
@@ -113,6 +115,8 @@ def expand_cfun_macros(clog_filename, src):
                 replacement = '->%s' % new
                 # print(replacement)
                 if src.within_comment_at(m.start()):
+                    continue
+                if src.within_string_literal_at(m.start()):
                     continue
                 src = src.replace(m.start(), m.end(), replacement)
                 scope = src.get_change_scope_at(m.start())
