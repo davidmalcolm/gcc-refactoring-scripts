@@ -334,6 +334,7 @@ def refactor_pass_initializers(filename, src):
         # no matches:
         break
 
+    src = src.wrap(tabify_changes=1)
     return src.str(as_tabs=0), changelog
 
 if __name__ == '__main__':

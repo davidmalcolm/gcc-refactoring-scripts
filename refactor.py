@@ -326,6 +326,9 @@ class Source:
         if line[:split_at][-3:] in (' &&', ' ||'):
             split_at -= 3
 
+        if line[:split_at][-2:] in (' |', ):
+            split_at -= 2
+
         assert line[split_at] == ' '
 
         # Omit the whitespace char at the split:
