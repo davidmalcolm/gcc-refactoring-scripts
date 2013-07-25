@@ -4,6 +4,42 @@ import sys
 
 from refactor import main, Changelog, tabify
 
+MULTI_INSTANCE_PASSES = frozenset( (
+    'pass_asan', # 2
+    'pass_ccp', # 4
+    'pass_cd_dce', # 2
+    'pass_cleanup_eh', # 2
+    'pass_copy_prop', # 8
+    'pass_dce', # 3
+    'pass_dce_loop', # 3
+    'pass_dominator', # 2
+    'pass_dse', # 2
+    'pass_fixup_cfg', # 2
+    'pass_fold_builtins', # 2
+    'pass_forwprop', # 4
+    'pass_fre', # 2
+    'pass_inline_parameters', # 2
+    'pass_late_warn_uninitialized', # 2
+    'pass_lim', # 3
+    'pass_local_pure_const', # 3
+    'pass_lower_complex', # 2
+    'pass_lower_vector_ssa', # 2
+    'pass_merge_phi', # 2
+    'pass_object_sizes', # 2
+    'pass_phi_only_cprop', # 2
+    'pass_phiopt', # 3
+    'pass_reassoc', # 2
+    'pass_rebuild_cgraph_edges', # 2
+    'pass_remove_cgraph_callee_edges', # 3
+    'pass_rename_ssa_copies', # 5
+    'pass_rtl_cprop', # 3
+    'pass_strip_predict_hints', # 2
+    'pass_tail_recursion', # 2
+    'pass_tsan', # 2
+    'pass_uncprop', # 2
+    'pass_vrp', # 2
+    ) )
+
 ############################################################################
 # Parsing input
 ############################################################################
@@ -72,8 +108,9 @@ def clean_field(field):
     field = field.strip()
     field = field.replace('\n', ' ')
     if '|' in field:
-        field = ' | '.join([flag.strip()
-                            for flag in field.split('|')])
+        field = '( %s )' % (
+            ' | '.join([flag.strip()
+                        for flag in field.split('|')]))
     return field
 
 def parse_basic_fields(gd):
@@ -111,11 +148,46 @@ def parse_extra_fields(gd):
 # Generating output
 ############################################################################
 
+def make_data(d):
+    if d['classname'].startswith('pass_'):
+        d['dataname'] = 'pass_data_%s' % d['classname'][5:]
+    else:
+        assert d['classname'] == 'one_pass'
+        d['dataname'] = 'pass_data_%s' % d['classname']
+
+    def make_field(name, value):
+        return '  %s, /* %s */\n' % (value, name)
+
+    # TODO: can we preserve exact whitespace?
+    def make_simple_field(name):
+        return make_field(name, d[name])
+    def make_raw_field(name):
+        return '%s\n' % d['raw_%s' % name]
+
+
+    s = 'namespace {\n\n'
+    s += 'const pass_data %(dataname)s =\n{\n' % d
+    s += make_simple_field('type')
+    s += make_simple_field('name')
+    s += make_simple_field('optinfo_flags')
+    s += make_field('has_gate',
+                    'false' if is_null(d['gate']) else 'true')
+    s += make_field('has_execute',
+                    'false' if is_null(d['execute']) else 'true')
+    s += make_simple_field('tv_id')
+    s += make_simple_field('properties_required')
+    s += make_simple_field('properties_provided')
+    s += make_simple_field('properties_destroyed')
+    s += make_simple_field('todo_flags_start')
+    s += make_simple_field('todo_flags_finish')
+    s += '};\n\n'
+    return s
+
 TEMPLATE_START_OF_CLASS = '''class %(classname)s : public %(passkind)s
 {
 public:
-  %(classname)s(context &ctxt)
-'''
+  %(classname)s(gcc::context *ctxt)
+    : %(passkind)s(%(dataname)s, ctxt'''
 
 def flags_ctor(indent, name, d, prefix, argnames, trailingtext):
     s = indent + '%s(' % name
@@ -144,30 +216,8 @@ def flags_ctor(indent, name, d, prefix, argnames, trailingtext):
                 s += '\n'
     return s
 
-def finish_pass_constructor(d, trailingtext):
-    s = '    : %(passkind)s(' % d
-    indent = ' ' * len(s)
-    s += 'ctxt,\n'
-    s += indent + '%(name)s,\n' % d
-    s += indent + '%(optinfo_flags)s,\n' % d
-    s += indent + '%(tv_id)s,\n' % d
-    s += flags_ctor(indent, 'pass_properties', d,
-                    'properties',
-                    ('properties_required',
-                     'properties_provided',
-                     'properties_destroyed'),
-                    ',')
-    s += '\n'
-    s += flags_ctor(indent, 'pass_todo_flags', d,
-                    'todo_flags',
-                    ('todo_flags_start',
-                     'todo_flags_finish'),
-                    trailingtext)
-    s += '\n'
-    return s
-
 TEMPLATE_FACTORY_FUNCTION = '''%(static)s%(passkind)s *
-make_%(classname)s (context &ctxt)
+make_%(classname)s (gcc::context *ctxt)
 {
   return new %(classname)s (ctxt);
 }'''
@@ -192,6 +242,9 @@ def make_method(returntype, name, args, body, uses_args):
                   '  }\n'
                   % (returntype, name, argdecl, body))
     return result
+
+def is_null(ptr):
+    return ptr in ('NULL', '0')
 
 def make_method_pair(d, returntype, name, args):
     """
@@ -243,28 +296,39 @@ def make_pass_methods(pi):
     d = pi._asdict()
     s = '\n'
     s += '  /* opt_pass methods: */\n'
-    s += make_method_pair(d, 'bool', 'gate', () )
-    s += make_method_pair(d, 'unsigned int', 'execute', () )
+    if d['passname'] in MULTI_INSTANCE_PASSES:
+        s += make_method('opt_pass *', 'clone', (),
+                         'return new %s (ctxt_);' % d['passname'], True)
+    if d['gate'] not in ('NULL', '0'):
+        s += make_method('bool', 'gate', (),
+                         'return %s ();' % d['gate'], True)
+    if d['execute'] not in ('NULL', '0'):
+        s += make_method('unsigned int', 'execute', (),
+                         'return %s ();' % d['execute'], True)
     return s
 
 def add_to_changelog(d, changelog):
-    changelog.append('struct %(passkind)s %(classname)s' % d,
+    changelog.append('%(classname)s' % d,
                      ('Convert from a global struct to a subclass of'
-                      ' %(passkind)s.' % d))
+                      ' %(passkind)s along with...' % d))
+    changelog.append('%(dataname)s' % d,
+                     '...new pass_data instance and...')
     changelog.append('make_%(classname)s' % d,
-                     ('New function to create an instance of the new class'
-                      ' %(classname)s.' %d))
+                     '...new function.')
+
+def finish_class(d):
+    result = '\n}; // class %s\n\n' % d['classname']
+    result += '} // anon namespace\n\n'
+    return result
 
 def make_replacement(pi, changelog):
     d = pi._asdict()
     d['classname'] = pi.passname
-    s = TEMPLATE_START_OF_CLASS % d
-    s += finish_pass_constructor(d, ')')
-    s += r'''  {}
-'''
+    s = make_data(d)
+    s += TEMPLATE_START_OF_CLASS % d
+    s += ')\n  {}\n'
     s += make_pass_methods(pi)
-    s += '}; // class %s\n\n' % d['classname']
-
+    s += finish_class(d)
     s += TEMPLATE_FACTORY_FUNCTION % d
 
     add_to_changelog(d, changelog)
@@ -275,26 +339,18 @@ def make_replacement2(pi, extra, changelog):
     d = pi._asdict()
     d.update(extra._asdict())
     d['classname'] = pi.passname
-    s = TEMPLATE_START_OF_CLASS % d
-    s += finish_pass_constructor(d, ',')
-    s += r'''                     %(function_transform_todo_flags_start)s) /* function_transform_todo_flags_start */
-  {}
-''' % d
+    s = make_data(d)
+    s += TEMPLATE_START_OF_CLASS % d
+    s += ',\n'
+    for extra in EXTRA_FIELDS[:-1]:
+        assert extra != d[extra]
+        s += '                     %s, /* %s */\n' % (d[extra], extra)
+    extra = EXTRA_FIELDS[-1]
+    assert extra != d[extra]
+    s += '                     %s) /* %s */\n' % (d[extra], extra)
+    s += '  {}\n'
     s += make_pass_methods(pi)
-    s += '  /* ipa_opt_pass_d methods: */\n'
-    s += make_method_pair(d, 'void', 'generate_summary', [] )
-    s += make_method_pair(d, 'void', 'write_summary', [] )
-    s += make_method_pair(d, 'void', 'read_summary', [] )
-    s += make_method_pair(d, 'void', 'write_optimization_summary', [] )
-    s += make_method_pair(d, 'void', 'read_optimization_summary', [] )
-    s += make_method_pair(d, 'void', 'stmt_fixup',
-                          [('struct cgraph_node *', 'node'),
-                           ('gimple *', 'stmt')])
-    s += make_method_pair(d, 'unsigned int', 'function_transform',
-                          [('struct cgraph_node *', 'node')])
-    s += make_method_pair(d, 'void', 'variable_transform',
-                          [('struct varpool_node *', 'node')])
-    s += '}; // class %s\n\n' % d['classname']
+    s += finish_class(d)
 
     s += TEMPLATE_FACTORY_FUNCTION % d
 
@@ -325,9 +381,11 @@ def refactor_pass_initializers(filename, src):
         m = src.search(pattern3)
         if m:
             gd = m.groupdict()
-            replacement = 'extern %(passkind)s *make_%(passname)s (context &ctxt);' % gd
-            changelog.append('struct %(passkind)s %(passname)s' % gd,
-                             'Replace declaration with that of new function make_%(passname)s.' % gd)
+            replacement = 'extern %(passkind)s *make_%(passname)s (gcc::context *ctxt);' % gd
+            changelog.append('%(passname)s' % gd,
+                             'Replace declaration with that of...')
+            changelog.append('make_%(passname)s' % gd,
+                             '...new function.')
             src = src.replace(m.start(), m.end(), tabify(replacement))
             continue
 
