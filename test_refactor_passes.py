@@ -200,8 +200,8 @@ const pass_data pass_data_mudflap_2 =
   0, /* properties_provided */
   0, /* properties_destroyed */
   0, /* todo_flags_start */
-  ( TODO_verify_flow | TODO_verify_stmts | TODO_update_ssa ), /*
- todo_flags_finish */
+  ( TODO_verify_flow | TODO_verify_stmts
+    | TODO_update_ssa ), /* todo_flags_finish */
 };
 
 class pass_mudflap_2 : public gimple_opt_pass
@@ -352,8 +352,8 @@ const pass_data pass_data_ipa_cp =
   0, /* properties_provided */
   0, /* properties_destroyed */
   0, /* todo_flags_start */
-  ( TODO_dump_symtab | TODO_remove_functions | TODO_ggc_collect ), /*
- todo_flags_finish */
+  ( TODO_dump_symtab | TODO_remove_functions
+    | TODO_ggc_collect ), /* todo_flags_finish */
 };
 
 class pass_ipa_cp : public ipa_opt_pass_d
@@ -478,8 +478,8 @@ const pass_data pass_data_ipa_whole_program_visibility =
   0, /* properties_provided */
   0, /* properties_destroyed */
   0, /* todo_flags_start */
-  ( TODO_remove_functions | TODO_dump_symtab | TODO_ggc_collect ), /*
- todo_flags_finish */
+  ( TODO_remove_functions | TODO_dump_symtab
+    | TODO_ggc_collect ), /* todo_flags_finish */
 };
 
 class pass_ipa_whole_program_visibility : public ipa_opt_pass_d
@@ -766,8 +766,8 @@ const pass_data pass_data_lower_complex =
   PROP_gimple_lcx, /* properties_provided */
   0, /* properties_destroyed */
   0, /* todo_flags_start */
-  ( TODO_ggc_collect | TODO_update_ssa | TODO_verify_stmts ), /*
- todo_flags_finish */
+  ( TODO_ggc_collect | TODO_update_ssa
+    | TODO_verify_stmts ), /* todo_flags_finish */
 };
 
 class pass_lower_complex : public gimple_opt_pass

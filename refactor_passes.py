@@ -4,6 +4,8 @@ import sys
 
 from refactor import main, Changelog, tabify
 
+MAX_LINE_LENGTH = 76
+
 MULTI_INSTANCE_PASSES = frozenset( (
     'pass_asan', # 2
     'pass_ccp', # 4
@@ -101,6 +103,15 @@ pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
 PATTERN3 = ('extern struct (?P<passkind>gimple_opt_pass|simple_ipa_opt_pass|ipa_opt_pass_d|rtl_opt_pass) (?P<passname>pass_\S+);')
 pattern3 = re.compile(PATTERN3)
 
+def to_flags(value):
+    """
+    Convert a string of the form 'flagA | flagB | flagC'
+    to a list of strings: ['flagA', 'flagB', 'flagC']
+    where 0 becomes ['0']
+    """
+    return [flag.strip()
+            for flag in value.split('|')]
+
 def clean_field(field):
     # Strip out C comments:
     field = re.sub(r'(/\*.*\*/)', '', field)
@@ -108,9 +119,7 @@ def clean_field(field):
     field = field.strip()
     field = field.replace('\n', ' ')
     if '|' in field:
-        field = '( %s )' % (
-            ' | '.join([flag.strip()
-                        for flag in field.split('|')]))
+        field = ' | '.join(to_flags(field))
     return field
 
 def parse_basic_fields(gd):
@@ -158,12 +167,29 @@ def make_data(d):
     def make_field(name, value):
         return '  %s, /* %s */\n' % (value, name)
 
-    # TODO: can we preserve exact whitespace?
     def make_simple_field(name):
         return make_field(name, d[name])
-    def make_raw_field(name):
-        return '%s\n' % d['raw_%s' % name]
 
+    def make_flags_field(name):
+        """
+        Add line-wraps so that long flag fields line-wrap like this:
+          ( TODO_verify_flow | TODO_verify_stmts
+            | TODO_update_ssa ), /* todo_flags_finish */
+        """
+        value = d[name]
+        if '|' in value:
+            flags = to_flags(value)
+            termstr = ' ), /* %s */\n' % name
+            result = '  ( %s' % flags[0]
+            for flag in flags[1:]:
+                next_ = ' | %s' % flag
+                if len(result + next_ + termstr) > MAX_LINE_LENGTH:
+                    result += '\n   '
+                result += next_
+            result += termstr
+            return result
+        else:
+            return make_field(name, value)
 
     s = 'namespace {\n\n'
     s += 'const pass_data %(dataname)s =\n{\n' % d
@@ -175,11 +201,11 @@ def make_data(d):
     s += make_field('has_execute',
                     'false' if is_null(d['execute']) else 'true')
     s += make_simple_field('tv_id')
-    s += make_simple_field('properties_required')
-    s += make_simple_field('properties_provided')
-    s += make_simple_field('properties_destroyed')
-    s += make_simple_field('todo_flags_start')
-    s += make_simple_field('todo_flags_finish')
+    s += make_flags_field('properties_required')
+    s += make_flags_field('properties_provided')
+    s += make_flags_field('properties_destroyed')
+    s += make_flags_field('todo_flags_start')
+    s += make_flags_field('todo_flags_finish')
     s += '};\n\n'
     return s
 
