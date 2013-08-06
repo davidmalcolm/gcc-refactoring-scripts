@@ -272,52 +272,6 @@ def make_method(returntype, name, args, body, uses_args):
 def is_null(ptr):
     return ptr in ('NULL', '0')
 
-def make_method_pair(d, returntype, name, args):
-    """
-    The pre-existing code has plenty of places where a pass' callback fn
-    is compared against NULL.  I believe that there isn't a portable way
-    to do this for a C++ vfunc, so each callback becomes *two* vtable
-    entries:
-       bool has_FOO ()   // equivalent to (pass->FOO != NULL) in old code
-    and
-       impl_FOO ()       // equivalent to (pass->FOO ()) in old code
-    """
-    existingfn = d[name]
-    if existingfn in ('NULL', '0'):
-        body_of_has = 'return false;'
-        if returntype == 'void':
-            # Assume a NULL function ptr "returning" void is to become
-            # a do-nothing hook:
-            body_of_impl = ''
-        else:
-            if name == 'gate':
-                body_of_impl = 'return true;'
-            elif name == 'execute':
-                body_of_impl = 'return 0;'
-            elif name == 'function_transform':
-                # this returns a "todo_after" which appears to be yet
-                # another set of flags:
-                body_of_impl = 'return 0;'
-            else:
-                raise ValueError("don't know how to refactor NULL %s" % name)
-        impl_uses_args = False
-    else:
-        body_of_has = 'return true;'
-
-        optreturn = 'return ' if returntype != 'void' else ''
-        argusage = ', '.join([argname
-                              for type_, argname in args])
-        body_of_impl = ('%s%s (%s);'
-                        % (optreturn, existingfn, argusage))
-        impl_uses_args = True
-
-    s = make_method('bool', 'has_%s' % name, [], body_of_has, uses_args=False)
-    s += make_method(returntype,
-                     'gate' if name == 'gate' else ('impl_%s' % name),
-                     args, body_of_impl, impl_uses_args)
-    s += '\n'
-    return s
-
 def make_pass_methods(pi):
     d = pi._asdict()
     s = '\n'
