@@ -2,6 +2,7 @@ from collections import namedtuple
 import os
 import re
 from subprocess import Popen, PIPE
+import sys
 from tempfile import NamedTemporaryFile
 
 start_of_line = r'^'
@@ -49,7 +50,7 @@ os.system("git add $(git diff | diffstat -lp1 | grep -v ChangeLog)")
 # Locate changed ChangeLogs, using it to build a commit message
 p = Popen("git diff | diffstat -lp1", stdout=PIPE, shell=True)
 out, err = p.communicate()
-commit_msg = ''
+commit_msg = "%s\n\n" % sys.argv[1] # initial line of commit message
 for changelog_path in out.splitlines():
     from pprint import pprint
     entries = parse_changelog(changelog_path)
@@ -62,5 +63,6 @@ print(commit_msg)
 p = Popen(['git', 'commit', '-F', '-'], stdin=PIPE)
 p.communicate(commit_msg)
 
-# Now purge the locally changed changelogs:
-os.system("git checkout $(git diff | diffstat -lp1 | grep ChangeLog)")
+if 0:
+    # Purge the locally changed changelogs:
+    os.system("git checkout $(git diff | diffstat -lp1 | grep ChangeLog)")
