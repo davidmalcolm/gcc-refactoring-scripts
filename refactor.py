@@ -408,7 +408,7 @@ def get_revision():
 AUTHOR = Author('David Malcolm', 'dmalcolm@redhat.com')
 GIT_URL = 'https://github.com/davidmalcolm/gcc-refactoring-scripts'
 
-def main(script, refactoring, argv):
+def main(script, refactoring, argv, skip_testsuite=False):
     cll = ChangeLogLayout('../src')
 
     revision = get_revision()
@@ -419,6 +419,9 @@ def main(script, refactoring, argv):
     today = date.today()
     cla = ChangeLogAdditions(cll, today.isoformat(), AUTHOR, headertext)
     def visit(arg, dirname, names):
+        if skip_testsuite:
+            if 'testsuite' in names:
+                names.remove('testsuite')
         for name in sorted(names):
             path = os.path.join(dirname, name)
             if os.path.isfile(path) \
