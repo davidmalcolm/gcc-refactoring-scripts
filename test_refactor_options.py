@@ -1,12 +1,55 @@
 import unittest
 
 from refactor import wrap, Source
-from refactor_options import make_macros_visible
+from refactor_options import make_macros_visible, parse_record, \
+    Variable, Option
 
 def make_expected_changelog(filename, scope, text):
     return wrap('\t* %s (%s): %s' % (filename, scope, text))
 
-class Tests(unittest.TestCase):
+class TestParsingTests(unittest.TestCase):
+    def assertParsesAs(self, lines, expected):
+        self.assertEqual(parse_record(lines), expected)
+
+class VariableTests(TestParsingTests):
+    def test_simple(self):
+        self.assertParsesAs(['Variable',
+                             'int optimize'],
+                            Variable('int', 'optimize'))
+
+    def test_initializer(self):
+        self.assertParsesAs(['Variable',
+                             'int flag_complex_method = 1'],
+                            Variable('int', 'flag_complex_method'))
+
+    def test_pointer(self):
+        self.assertParsesAs(['Variable',
+                             'void *flag_instrument_functions_exclude_functions'],
+                            Variable('void *',
+                                     'flag_instrument_functions_exclude_functions'))
+
+    def test_enum_with_initializer(self):
+        self.assertParsesAs(['Variable',
+                            'enum debug_struct_file debug_struct_generic[DINFO_USAGE_NUM_ENUMS] = { DINFO_STRUCT_FILE_ANY, DINFO_STRUCT_FILE_ANY, DINFO_STRUCT_FILE_ANY }'],
+                            Variable('enum debug_struct_file',
+                                     'debug_struct_generic'))
+
+class OptionTests(TestParsingTests):
+    def test_simple(self):
+        self.assertParsesAs(
+            ['ftree-vrp',
+             'Common Report Var(flag_tree_vrp) Init(0) Optimization',
+             'Perform Value Range Propagation on trees'],
+            Option(name='ftree-vrp',
+                   availability='Common',
+                   kind='Optimization',
+                   driver=False,
+                   report=True,
+                   var='flag_tree_vrp',
+                   init='0',
+                   helptext='Perform Value Range Propagation on trees'))
+
+class IntegrationTests(unittest.TestCase):
     def assertRefactoredCodeEquals(self,
                                    src, filename,
                                    expected_code):
