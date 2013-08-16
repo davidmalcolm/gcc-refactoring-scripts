@@ -141,7 +141,13 @@ def make_macros_visible(clog_filename, src):
     optvarnames = [opt.var
                    for opt in records
                    if isinstance(opt, Option)]
-    patterns = [re.compile(r'[^\(] (%s)' % varname, re.MULTILINE | re.DOTALL)
+    # Construct regular expressions for matching the varnames.
+    # Must not be preceded by "( ", so that we don't repeatedly
+    # apply the transformation
+    # Must not be followed by a valid identifier character, so
+    # that we don't match other variables which have a matching
+    # initial suffix.
+    patterns = [re.compile(r'[^\(] (%s)[^_a-zA-Z0-9]' % varname, re.MULTILINE | re.DOTALL)
                 for varname in optvarnames]
     changelog = Changelog(clog_filename)
     scopes = OrderedDict()

@@ -85,5 +85,11 @@ class IntegrationTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'tree-vrp.c',
                                      expected_code, expected_changelog)
 
+    def test_trailing(self):
+        src = (
+            '   /* True if pedwarns are errors.  */\n'
+            '   bool pedantic_errors;\n')
+        self.assertUnchanged(src, 'diagnostic.h')
+
 if __name__ == '__main__':
     unittest.main()
