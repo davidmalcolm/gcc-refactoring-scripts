@@ -33,15 +33,15 @@ optws = r'\s*'
 
 PATTERN = (
     'namespace {' + ws
-    + r'const pass_data (?P<passdata_name>\S+) =\n'
-    + '{[^}]+};\n\n'
-    + '(?P<start_of_class>class) (?P<pass_name>\S+) : public ipa_opt_pass_d\n'
+    + r'const pass_data (?P<passdata_name>\S+?) =\n'
+    + '{[^}]+?};\n\n'
+    + '(?P<start_of_class>class) (?P<pass_name>\S+?) : public ipa_opt_pass_d\n'
     + '{\n'
     + 'public:\n'
-    + '(?P<ctor>.*)'
+    + '(?P<ctor>.*?)'
     + '  /\* opt_pass methods: \*/\n'
-    + '(?P<opt_pass_methods>.*)'
-    + '(?P<end_of_class>}); // class (.*)\n'
+    + '(?P<opt_pass_methods>.*?)'
+    + '(?P<end_of_class>}); // class (.*?)\n'
     + '\n'
     + '} // anon namespace'
 )
@@ -143,4 +143,5 @@ def refactor_ipa_passes(filename, src):
     return src.str(as_tabs=0), changelog
 
 if __name__ == '__main__':
-    main('refactor_passes_2.py', refactor_ipa_passes, sys.argv)
+    main('refactor_ipa_passes.py', refactor_ipa_passes, sys.argv,
+         skip_testsuite=True)
