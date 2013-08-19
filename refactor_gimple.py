@@ -163,5 +163,5 @@ def convert_to_inheritance(clog_filename, src):
     return src.str(), changelog
 
 if __name__ == '__main__':
-    main('refactor_symtab.py', convert_to_inheritance, sys.argv,
+    main('refactor_gimple.py', convert_to_inheritance, sys.argv,
          skip_testsuite=True)
