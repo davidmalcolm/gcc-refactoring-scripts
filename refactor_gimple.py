@@ -115,29 +115,37 @@ def convert_to_inheritance(clog_filename, src):
                 scopes[scope] = scope
             continue
 
+        # Potentially introduce an "as_a<>" downcast to access
+        # fields of a subclass:
         m = src.search(pattern2)
         if m:
             scope = src.get_change_scope_at(m.start('body'))
             #print(scope)
-            if scope not in scopes:
-                scopes[scope] = scope
             gd = m.groupdict()
             #from pprint import pprint
             #pprint(gd)
             gimple_code = gd['gimple_code']
-            subclass = gt.get_struct_for_gimple_code(gimple_code)
             union_field = gt.get_union_field(gimple_code)
             #print(union_field)
             instance_name = gt.get_instance_name(gimple_code)
             #print(instance_name)
-            replacement = ('%s *%s = as_a <%s> (gs)'
-                           % (subclass, instance_name, subclass))
-            src = src.replace(m.start('check_stmt'), m.end('check_stmt'), replacement)
 
-            for m in src.finditer('(gs->%s.)' % union_field):
+            subclass_uses = 0
+            for m2 in src.finditer('(gs->%s.)' % union_field):
                 #print m.groups()
-                src = src.replace(m.start(), m.end(), '%s->' % instance_name)
-            continue
+                src = src.replace(m2.start(), m2.end(),
+                                  '%s->' % instance_name)
+                subclass_uses += 1
+
+            if subclass_uses:
+                subclass = gt.get_struct_for_gimple_code(gimple_code)
+                replacement = ('%s *%s = as_a <%s> (gs)'
+                               % (subclass, instance_name, subclass))
+                src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
+                                  replacement)
+                if scope not in scopes:
+                    scopes[scope] = scope
+                continue
 
         # no matches:
         break

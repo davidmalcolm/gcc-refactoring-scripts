@@ -111,6 +111,15 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
+    def test_no_use_of_subclass(self):
+        src = (
+            'static inline tree\n'
+            'gimple_assign_lhs (const_gimple gs)\n'
+            '{\n'
+            '  GIMPLE_CHECK (gs, GIMPLE_ASSIGN);\n'
+            '  return gimple_op (gs, 0);\n'
+            '}\n')
+        self.assertUnchanged(src, 'gimple.h')
 
 if __name__ == '__main__':
     unittest.main()
