@@ -1,7 +1,7 @@
 import unittest
 
 from refactor import wrap, Source
-from refactor_gimple import convert_to_inheritance
+from refactor_gimple import convert_to_inheritance, GimpleTypes
 
 def make_expected_changelog(filename, scope, text):
     return wrap('\t* %s (%s): %s' % (filename, scope, text))
@@ -42,6 +42,18 @@ class Tests(unittest.TestCase):
                                   actual_changelog.as_text(None)[0]) # 2.7+
     def assertUnchanged(self, src, filename):
         self.assertRefactoringEquals(src, filename, src, '')
+
+    def test_gimple_types(self):
+        # Verify that we're correctly parsing gimple.def and gsstruct.def
+        gt = GimpleTypes()
+        self.assertIn(('GSS_OMP_FOR', 'gimple_statement_omp_for', 'false'),
+                      gt.gsdefs)
+        self.assertIn(('GIMPLE_OMP_FOR', 'gimple_omp_for', 'GSS_OMP_FOR'),
+                      gt.gimple_defs)
+        self.assertEqual(gt.gsscodes['GSS_OMP_FOR'],
+                         ('gimple_statement_omp_for', 'false'))
+        self.assertEqual(gt.gimplecodes['GIMPLE_OMP_FOR'],
+                         ('gimple_omp_for', 'GSS_OMP_FOR'))
 
     def test_removing_gsbase(self):
         src = (
