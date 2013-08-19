@@ -189,7 +189,11 @@ class Source:
                                        else '.'))
 
     def finditer(self, pattern):
-        return re.finditer(pattern, self._str)
+        """
+        Return the matches in reverse order so that changes later on
+        don't disturb indices into the string earlier on.
+        """
+        return list(re.finditer(pattern, self._str))[::-1]
 
     def search(self, pattern):
         return re.search(pattern, self._str)
