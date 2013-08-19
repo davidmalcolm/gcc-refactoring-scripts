@@ -117,8 +117,8 @@ def convert_to_inheritance(clog_filename, src):
 
         # Potentially introduce an "as_a<>" downcast to access
         # fields of a subclass:
-        m = src.search(pattern2)
-        if m:
+        changes = False
+        for m in src.finditer(pattern2):
             scope = src.get_change_scope_at(m.start('body'))
             #print(scope)
             gd = m.groupdict()
@@ -130,14 +130,18 @@ def convert_to_inheritance(clog_filename, src):
             instance_name = gt.get_instance_name(gimple_code)
             #print(instance_name)
 
+            body = gd['body']
+
             subclass_uses = 0
-            for m2 in src.finditer('(gs->%s.)' % union_field):
-                #print m.groups()
-                src = src.replace(m2.start(), m2.end(),
-                                  '%s->' % instance_name)
+            for m2 in list(re.finditer('(gs->%s.)' % union_field,
+                                       body))[::-1]:
+                body = (body[:m2.start()]
+                        + ('%s->' % instance_name)
+                        +  body[m2.end():])
                 subclass_uses += 1
 
-            if subclass_uses:
+            if subclass_uses > 0:
+                src = src.replace(m.start('body'), m.end('body'), body)
                 subclass = gt.get_struct_for_gimple_code(gimple_code)
                 replacement = ('%s *%s = as_a <%s> (gs)'
                                % (subclass, instance_name, subclass))
@@ -145,7 +149,9 @@ def convert_to_inheritance(clog_filename, src):
                                   replacement)
                 if scope not in scopes:
                     scopes[scope] = scope
-                continue
+                changes = True
+        if changes:
+            continue
 
         # no matches:
         break
