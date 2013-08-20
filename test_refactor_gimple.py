@@ -59,6 +59,16 @@ class Tests(unittest.TestCase):
         self.assertEqual(gt.gimplecodes['GIMPLE_OMP_ATOMIC_LOAD'],
                          ("gimple_omp_atomic_load", 'GSS_OMP_ATOMIC_LOAD'))
 
+        # Verify the C++ inheritance hierarchy:
+        self.assertEqual(gt.parentclasses['gimple_statement_base'], None)
+        self.assertEqual(gt.parentclasses['gimple_statement_transaction'],
+                         'gimple_statement_with_memory_ops_base')
+
+        self.assertEqual(gt.get_parent_classes('gimple_statement_omp_task'),
+                         ['gimple_statement_base',
+                          'gimple_statement_omp',
+                          'gimple_statement_omp_parallel',
+                          'gimple_statement_omp_task'])
 
     def test_removing_gsbase(self):
         src = (
@@ -91,7 +101,8 @@ class Tests(unittest.TestCase):
             'static inline void\n'
             'gimple_eh_else_set_e_body (gimple gs, gimple_seq seq)\n'
             '{\n'
-            '  gimple_statement_eh_else *eh_else_stmt = as_a <gimple_statement_eh_else> (gs);\n'
+            '  gimple_statement_eh_else *eh_else_stmt =\n'
+            '    as_a <gimple_statement_eh_else> (gs);\n'
             '  eh_else_stmt->e_body = seq;\n'
             '}\n')
         expected_changelog = \
@@ -117,7 +128,8 @@ class Tests(unittest.TestCase):
             'static inline void\n'
             'gimple_omp_for_set_cond (gimple gs, size_t i, enum tree_code cond)\n'
             '{\n'
-            '  gimple_statement_omp_for *omp_for_stmt = as_a <gimple_statement_omp_for> (gs);\n'
+            '  gimple_statement_omp_for *omp_for_stmt =\n'
+            '    as_a <gimple_statement_omp_for> (gs);\n'
             '  gcc_gimple_checking_assert (TREE_CODE_CLASS (cond) == tcc_comparison\n'
             '\t\t\t      && i < omp_for_stmt->collapse);\n'
             '  omp_for_stmt->iter[i].cond = cond;\n'
@@ -178,12 +190,41 @@ class Tests(unittest.TestCase):
             'static inline void\n'
             'gimple_omp_atomic_load_set_lhs (gimple g, tree lhs)\n'
             '{\n'
-            '  gimple_statement_omp_atomic_load *omp_atomic_load_stmt = as_a <gimple_statement_omp_atomic_load> (g);\n'
+            '  gimple_statement_omp_atomic_load *omp_atomic_load_stmt =\n'
+            '    as_a <gimple_statement_omp_atomic_load> (g);\n'
             '  omp_atomic_load_stmt->lhs = lhs;\n'
             '}\n')
         expected_changelog = \
             ('\t* gimple.h (gimple_omp_atomic_load_set_lhs): Update for conversion of\n'
              '\tgimple types to a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+    def test_gimple_omp_task_clauses(self):
+        # This one checks for GIMPLE_OMP_TASK (which is GSS_OMP_TASK and thus
+        # struct gimple_statement_omp_task), but then uses the union field
+        # gimple_omp_parallel, which is GSS_OMP_PARALLEL (which is struct
+        # gimple_statement_omp_parallel).
+        # omp_task is indeed a subclass of omp_parallel; we need to walk the
+        # base classes when considering union fields.
+        src = (
+            'static inline tree\n'
+            'gimple_omp_task_clauses (const_gimple gs)\n'
+            '{\n'
+            '  GIMPLE_CHECK (gs, GIMPLE_OMP_TASK);\n'
+            '  return gs->gimple_omp_parallel.clauses;\n'
+            '}\n')
+        expected_code = (
+            'static inline tree\n'
+            'gimple_omp_task_clauses (const_gimple gs)\n'
+            '{\n'
+            '  gimple_statement_omp_task *omp_task_stmt =\n'
+            '    as_a <gimple_statement_omp_task> (gs);\n'
+            '  return omp_task_stmt->clauses;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_omp_task_clauses): Update for conversion of gimple\n'
+             '\ttypes to a true class hierarchy.\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 

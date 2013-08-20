@@ -2,7 +2,7 @@ from collections import OrderedDict
 import re
 import sys
 
-from refactor import main, Changelog
+from refactor import main, Changelog, ws, identifier_group
 
 PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
@@ -27,6 +27,8 @@ class GimpleTypes:
         self.gimple_defs = GimpleTypes.parse_gimple_def()
         #pprint(self.gimple_defs)
 
+        self.parse_gimple_h()
+
         # Mapping from GSS_foo to (struct_name, has_tree_operands) pair:
         self.gsscodes = {}
         for gss_enum, struct_name, has_tree_operands in self.gsdefs:
@@ -45,12 +47,11 @@ class GimpleTypes:
         struct_name, has_tree_operands = self.gsscodes[gss_enum]
         return struct_name
 
-    def get_union_field(self, gimple_code):
+    def get_union_field(self, struct):
         """
-        Get the name of the field for this gss value within
+        Get the name of the field for this struct within
         union gimple_statement_d
         """
-        struct = self.get_struct_for_gimple_code(gimple_code)
         assert struct.startswith('gimple_statement_')
         if struct == 'gimple_statement_omp':
             return 'omp'
@@ -94,6 +95,30 @@ class GimpleTypes:
                 gimple_defs.append(m.groups())
         return gimple_defs
 
+    def parse_gimple_h(self):
+        """
+        Scrape out the inheritance hierarchy from gimple.h
+        """
+        self.parentclasses = {'gimple_statement_base' : None}
+        with open('../src/gcc/gimple.h') as f:
+            txt = f.read()
+            pattern = (r'struct' + ws + 'GTY\(\(user\)\)' + ws
+                       + identifier_group + ws + ':' + ws + 'public' + ws
+                       + identifier_group + ws)
+            for m in re.finditer(pattern, txt,
+                                 re.MULTILINE | re.DOTALL):
+                self.parentclasses[m.group(1)] = m.group(2)
+
+    def get_parent_classes(self, struct):
+        result = [struct]
+        # Build in reverse order:
+        while 1:
+            struct = self.parentclasses[struct]
+            if struct:
+                result.append(struct)
+            else:
+                # We have the list; reverse it:
+                return result[::-1]
 
 def convert_to_inheritance(clog_filename, src):
     """
@@ -123,30 +148,42 @@ def convert_to_inheritance(clog_filename, src):
             scope = src.get_change_scope_at(m.start('body'))
             #print(scope)
             gd = m.groupdict()
-            #from pprint import pprint
-            #pprint(gd)
             gimple_code = gd['gimple_code']
-            union_field = gt.get_union_field(gimple_code)
-            #print(union_field)
             instance_name = gt.get_instance_name(gimple_code)
             #print(instance_name)
 
             body = gd['body']
             param = gd['param']
 
-            subclass_uses = 0
-            for m2 in list(re.finditer('(gs?->%s.)' % union_field,
-                                       body))[::-1]:
-                body = (body[:m2.start()]
-                        + ('%s->' % instance_name)
-                        +  body[m2.end():])
-                subclass_uses += 1
+            subclass = gt.get_struct_for_gimple_code(gimple_code)
 
+            # Consider downcasting "gimple gs" to "someclass some_stmt"
+            # Replace uses of  "gs->some_union" with just "some_stmt->",
+            # for those unions that are within the inheritance chain of the
+            # subclass being checked for.
+            subclass_uses = 0
+            for parent in gt.get_parent_classes(subclass):
+                #print(parent)
+                union_field = gt.get_union_field(parent)
+                #print(union_field)
+                for m2 in list(re.finditer('(gs?->%s.)' % union_field,
+                                           body))[::-1]:
+                    body = (body[:m2.start()]
+                            + ('%s->' % instance_name)
+                            +  body[m2.end():])
+                    subclass_uses += 1
+
+            # If we would need to replace any union references, convert
+            # the check into a checked downcast, and perform the
+            # replacement:
             if subclass_uses > 0:
                 src = src.replace(m.start('body'), m.end('body'), body)
-                subclass = gt.get_struct_for_gimple_code(gimple_code)
                 replacement = ('%s *%s = as_a <%s> (%s)'
                                % (subclass, instance_name, subclass, param))
+                if len(replacement) > 76:
+                    replacement = ('%s *%s =\n'
+                                   '    as_a <%s> (%s)'
+                                   % (subclass, instance_name, subclass, param))
                 src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                                   replacement)
                 if scope not in scopes:
