@@ -218,8 +218,8 @@ class Tests(unittest.TestCase):
             'static inline tree\n'
             'gimple_omp_task_clauses (const_gimple gs)\n'
             '{\n'
-            '  gimple_statement_omp_task *omp_task_stmt =\n'
-            '    as_a <gimple_statement_omp_task> (gs);\n'
+            '  const gimple_statement_omp_task *omp_task_stmt =\n'
+            '    as_a <const gimple_statement_omp_task> (gs);\n'
             '  return omp_task_stmt->clauses;\n'
             '}\n')
         expected_changelog = \
@@ -257,6 +257,89 @@ class Tests(unittest.TestCase):
         expected_changelog = \
             ('\t* gimple.h (gimple_omp_taskreg_child_fn_ptr): Update for conversion of\n'
              '\tgimple types to a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+    def test_const(self):
+        src = (
+            'static inline tree\n'
+            'gimple_bind_vars (const_gimple gs)\n'
+            '{\n'
+            '  GIMPLE_CHECK (gs, GIMPLE_BIND);\n'
+            '  return gs->gimple_bind.vars;\n'
+            '}\n')
+        expected_code = (
+            'static inline tree\n'
+            'gimple_bind_vars (const_gimple gs)\n'
+            '{\n'
+            '  const gimple_statement_bind *bind_stmt =\n'
+            '    as_a <const gimple_statement_bind> (gs);\n'
+            '  return bind_stmt->vars;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_bind_vars): Update for conversion of gimple types\n'
+             '\tto a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+    def test_const_2(self):
+        src = (
+            'static inline tree\n'
+            'gimple_omp_critical_name (const_gimple gs)\n'
+            '{\n'
+            '  GIMPLE_CHECK (gs, GIMPLE_OMP_CRITICAL);\n'
+            '  return gs->gimple_omp_critical.name;\n'
+            '}\n')
+        expected_code = (
+            'static inline tree\n'
+            'gimple_omp_critical_name (const_gimple gs)\n'
+            '{\n'
+            '  const gimple_statement_omp_critical *omp_critical_stmt =\n'
+            '    as_a <const gimple_statement_omp_critical> (gs);\n'
+            '  return omp_critical_stmt->name;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_omp_critical_name): Update for conversion of gimple\n'
+             '\ttypes to a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+    def test_const_3(self):
+        # The preceding function was messing up the regex
+        src = (
+            'static inline gimple_seq\n'
+            'gimple_transaction_body (gimple gs)\n'
+            '{\n'
+            '  return *gimple_transaction_body_ptr (gs);\n'
+            '}\n'
+            '\n'
+            '/* Return the label associated with a GIMPLE_TRANSACTION.  */\n'
+            '\n'
+            'static inline tree\n'
+            'gimple_transaction_label (const_gimple gs)\n'
+            '{\n'
+            '  GIMPLE_CHECK (gs, GIMPLE_TRANSACTION);\n'
+            '  return gs->gimple_transaction.label;\n'
+            '}\n')
+        expected_code = (
+            'static inline gimple_seq\n'
+            'gimple_transaction_body (gimple gs)\n'
+            '{\n'
+            '  return *gimple_transaction_body_ptr (gs);\n'
+            '}\n'
+            '\n'
+            '/* Return the label associated with a GIMPLE_TRANSACTION.  */\n'
+            '\n'
+            'static inline tree\n'
+            'gimple_transaction_label (const_gimple gs)\n'
+            '{\n'
+            '  const gimple_statement_transaction *transaction_stmt =\n'
+            '    as_a <const gimple_statement_transaction> (gs);\n'
+            '  return transaction_stmt->label;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_transaction_label): Update for conversion of gimple\n'
+             '\ttypes to a true class hierarchy.\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 

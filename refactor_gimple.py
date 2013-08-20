@@ -8,17 +8,21 @@ PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
 DOWNCAST_PATTERN = (
-    r'{\n'
+    '\n'
+    + identifier_group + r' \((?P<const>const_)?gimple gs?(?P<extra_args>[^)]*?)\)\n'
+    + r'{\n'
     + '  (?P<check_stmt>GIMPLE_CHECK \((?P<param>gs?), (?P<gimple_code>[A-Z_]+?)\));\n'
-    + '  (?P<body>.+?)\n'
+    + '  (?P<body>[^}]+?)\n'
     + '}\n')
 downcast_pattern = re.compile(DOWNCAST_PATTERN, re.MULTILINE | re.DOTALL)
 
 DOWNCAST_PATTERN2 = (
-    '{\n'
+    '\n'
+    + identifier_group + r' \((?P<const>const_)?gimple gs?(?P<extra_args>[^)]*?)\)\n'
+    + '{\n'
     + '  (?P<check_stmt>if \(gimple_code \(gs?\) != (?P<gimple_code>[A-Z_]+?)\)' + '\n'
     + '    GIMPLE_CHECK \((?P<param>gs?), [A-Z_]+?\));' + '\n'
-    + '  (?P<body>.+?)\n'
+    + '  (?P<body>[^}]+?)\n'
     + '}\n')
 downcast_pattern2 = re.compile(DOWNCAST_PATTERN2, re.MULTILINE | re.DOTALL)
 
@@ -167,12 +171,15 @@ def add_downcast(gt, scopes, src, pattern):
         # replacement:
         if subclass_uses > 0:
             src = src.replace(m.start('body'), m.end('body'), body)
-            replacement = ('%s *%s = as_a <%s> (%s)'
-                           % (subclass, instance_name, subclass, param))
+            const = 'const ' if (gd['const'] == 'const_') else ''
+            replacement = ('%s%s *%s = as_a <%s%s> (%s)'
+                           % (const, subclass, instance_name,
+                              const, subclass, param))
             if len(replacement) > 76:
-                replacement = ('%s *%s =\n'
-                               '    as_a <%s> (%s)'
-                               % (subclass, instance_name, subclass, param))
+                replacement = ('%s%s *%s =\n'
+                               '    as_a <%s%s> (%s)'
+                               % (const, subclass, instance_name,
+                                  const, subclass, param))
             src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                               replacement)
             if scope not in scopes:
