@@ -7,11 +7,20 @@ from refactor import main, Changelog, ws, identifier_group
 PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
-PATTERN2 = (r'{\n'
-            + '  (?P<check_stmt>GIMPLE_CHECK \((?P<param>gs?), (?P<gimple_code>[A-Z_]+?)\));\n'
-            + '  (?P<body>.+?)\n'
-            + '}\n')
-pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
+DOWNCAST_PATTERN = (
+    r'{\n'
+    + '  (?P<check_stmt>GIMPLE_CHECK \((?P<param>gs?), (?P<gimple_code>[A-Z_]+?)\));\n'
+    + '  (?P<body>.+?)\n'
+    + '}\n')
+downcast_pattern = re.compile(DOWNCAST_PATTERN, re.MULTILINE | re.DOTALL)
+
+DOWNCAST_PATTERN2 = (
+    '{\n'
+    + '  (?P<check_stmt>if \(gimple_code \(gs?\) != (?P<gimple_code>[A-Z_]+?)\)' + '\n'
+    + '    GIMPLE_CHECK \((?P<param>gs?), [A-Z_]+?\));' + '\n'
+    + '  (?P<body>.+?)\n'
+    + '}\n')
+downcast_pattern2 = re.compile(DOWNCAST_PATTERN2, re.MULTILINE | re.DOTALL)
 
 #FIXME: gstruct.def vs gimple.h
 
@@ -120,11 +129,11 @@ class GimpleTypes:
                 # We have the list; reverse it:
                 return result[::-1]
 
-def add_downcast(gt, scopes, src):
+def add_downcast(gt, scopes, src, pattern):
     # Potentially introduce an "as_a<>" downcast to access
     # fields of a subclass:
     changes = 0
-    for m in src.finditer(pattern2):
+    for m in src.finditer(pattern):
         scope = src.get_change_scope_at(m.start('body'))
         #print(scope)
         gd = m.groupdict()
@@ -193,7 +202,10 @@ def convert_to_inheritance(clog_filename, src):
                 scopes[scope] = scope
             continue
 
-        src, changes = add_downcast(gt, scopes, src)
+        src, changes = add_downcast(gt, scopes, src, downcast_pattern)
+        if changes:
+            continue
+        src, changes = add_downcast(gt, scopes, src, downcast_pattern2)
         if changes:
             continue
 
