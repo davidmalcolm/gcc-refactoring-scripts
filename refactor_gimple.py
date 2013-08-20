@@ -8,7 +8,7 @@ PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
 PATTERN2 = (r'{\n'
-            + '  (?P<check_stmt>GIMPLE_CHECK \(gs, (?P<gimple_code>[A-Z_]+?)\));\n'
+            + '  (?P<check_stmt>GIMPLE_CHECK \((?P<param>gs?), (?P<gimple_code>[A-Z_]+?)\));\n'
             + '  (?P<body>.+?)\n'
             + '}\n')
 pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
@@ -65,7 +65,7 @@ class GimpleTypes:
         struct = self.get_struct_for_gimple_code(gimple_code)
         assert struct.startswith('gimple_statement_')
         # Remove 'gimple_statement_' prefix:
-        return struct[len('gimple_statement_'):]
+        return struct[len('gimple_statement_'):] + '_stmt'
 
     @staticmethod
     def parse_gsstruct_def():
@@ -87,10 +87,11 @@ class GimpleTypes:
         """
         gimple_defs = []
         with open('../src/gcc/gimple.def') as f:
-            for line in f:
-                m = re.match('^DEFGSCODE\((.+?), "(.+?)", (.+?)\)$', line)
-                if m:
-                    gimple_defs.append(m.groups())
+            txt = f.read()
+            for m in re.finditer('^DEFGSCODE\((.+?),\s+"(.+?)",\s+(.+?)\)$',
+                                 txt,
+                                 re.MULTILINE | re.DOTALL):
+                gimple_defs.append(m.groups())
         return gimple_defs
 
 
@@ -131,9 +132,10 @@ def convert_to_inheritance(clog_filename, src):
             #print(instance_name)
 
             body = gd['body']
+            param = gd['param']
 
             subclass_uses = 0
-            for m2 in list(re.finditer('(gs->%s.)' % union_field,
+            for m2 in list(re.finditer('(gs?->%s.)' % union_field,
                                        body))[::-1]:
                 body = (body[:m2.start()]
                         + ('%s->' % instance_name)
@@ -143,8 +145,8 @@ def convert_to_inheritance(clog_filename, src):
             if subclass_uses > 0:
                 src = src.replace(m.start('body'), m.end('body'), body)
                 subclass = gt.get_struct_for_gimple_code(gimple_code)
-                replacement = ('%s *%s = as_a <%s> (gs)'
-                               % (subclass, instance_name, subclass))
+                replacement = ('%s *%s = as_a <%s> (%s)'
+                               % (subclass, instance_name, subclass, param))
                 src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                                   replacement)
                 if scope not in scopes:
