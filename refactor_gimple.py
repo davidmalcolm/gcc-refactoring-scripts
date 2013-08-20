@@ -120,6 +120,57 @@ class GimpleTypes:
                 # We have the list; reverse it:
                 return result[::-1]
 
+def add_downcast(gt, scopes, src):
+    # Potentially introduce an "as_a<>" downcast to access
+    # fields of a subclass:
+    changes = 0
+    for m in src.finditer(pattern2):
+        scope = src.get_change_scope_at(m.start('body'))
+        #print(scope)
+        gd = m.groupdict()
+        gimple_code = gd['gimple_code']
+        instance_name = gt.get_instance_name(gimple_code)
+        #print(instance_name)
+
+        body = gd['body']
+        param = gd['param']
+
+        subclass = gt.get_struct_for_gimple_code(gimple_code)
+
+        # Consider downcasting "gimple gs" to "someclass some_stmt"
+        # Replace uses of  "gs->some_union" with just "some_stmt->",
+        # for those unions that are within the inheritance chain of the
+        # subclass being checked for.
+        subclass_uses = 0
+        for parent in gt.get_parent_classes(subclass):
+            #print(parent)
+            union_field = gt.get_union_field(parent)
+            #print(union_field)
+            for m2 in list(re.finditer('(gs?->%s.)' % union_field,
+                                       body))[::-1]:
+                body = (body[:m2.start()]
+                        + ('%s->' % instance_name)
+                        +  body[m2.end():])
+                subclass_uses += 1
+
+        # If we would need to replace any union references, convert
+        # the check into a checked downcast, and perform the
+        # replacement:
+        if subclass_uses > 0:
+            src = src.replace(m.start('body'), m.end('body'), body)
+            replacement = ('%s *%s = as_a <%s> (%s)'
+                           % (subclass, instance_name, subclass, param))
+            if len(replacement) > 76:
+                replacement = ('%s *%s =\n'
+                               '    as_a <%s> (%s)'
+                               % (subclass, instance_name, subclass, param))
+            src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
+                              replacement)
+            if scope not in scopes:
+                scopes[scope] = scope
+            changes += 1
+    return src, changes
+
 def convert_to_inheritance(clog_filename, src):
     """
     Look for code of the form:
@@ -132,6 +183,7 @@ def convert_to_inheritance(clog_filename, src):
     changelog = Changelog(clog_filename)
     scopes = OrderedDict()
     while 1:
+        # Convert "gs->gsbase.somefield" to just "gs->somefield":
         m = src.search(pattern)
         if m:
             scope = src.get_change_scope_at(m.start())
@@ -141,54 +193,7 @@ def convert_to_inheritance(clog_filename, src):
                 scopes[scope] = scope
             continue
 
-        # Potentially introduce an "as_a<>" downcast to access
-        # fields of a subclass:
-        changes = False
-        for m in src.finditer(pattern2):
-            scope = src.get_change_scope_at(m.start('body'))
-            #print(scope)
-            gd = m.groupdict()
-            gimple_code = gd['gimple_code']
-            instance_name = gt.get_instance_name(gimple_code)
-            #print(instance_name)
-
-            body = gd['body']
-            param = gd['param']
-
-            subclass = gt.get_struct_for_gimple_code(gimple_code)
-
-            # Consider downcasting "gimple gs" to "someclass some_stmt"
-            # Replace uses of  "gs->some_union" with just "some_stmt->",
-            # for those unions that are within the inheritance chain of the
-            # subclass being checked for.
-            subclass_uses = 0
-            for parent in gt.get_parent_classes(subclass):
-                #print(parent)
-                union_field = gt.get_union_field(parent)
-                #print(union_field)
-                for m2 in list(re.finditer('(gs?->%s.)' % union_field,
-                                           body))[::-1]:
-                    body = (body[:m2.start()]
-                            + ('%s->' % instance_name)
-                            +  body[m2.end():])
-                    subclass_uses += 1
-
-            # If we would need to replace any union references, convert
-            # the check into a checked downcast, and perform the
-            # replacement:
-            if subclass_uses > 0:
-                src = src.replace(m.start('body'), m.end('body'), body)
-                replacement = ('%s *%s = as_a <%s> (%s)'
-                               % (subclass, instance_name, subclass, param))
-                if len(replacement) > 76:
-                    replacement = ('%s *%s =\n'
-                                   '    as_a <%s> (%s)'
-                                   % (subclass, instance_name, subclass, param))
-                src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
-                                  replacement)
-                if scope not in scopes:
-                    scopes[scope] = scope
-                changes = True
+        src, changes = add_downcast(gt, scopes, src)
         if changes:
             continue
 
