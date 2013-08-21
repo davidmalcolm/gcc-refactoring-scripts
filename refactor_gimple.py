@@ -2,26 +2,27 @@ from collections import OrderedDict
 import re
 import sys
 
-from refactor import main, Changelog, ws, identifier_group
+from refactor import main, Changelog, ws, identifier_group, \
+    named_identifier_group
 
 PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
 DOWNCAST_PATTERN = (
     '\n'
-    + identifier_group + r' \((?P<const>const_)?gimple gs?(?P<extra_args>[^)]*?)\)\n'
+    + identifier_group + r' \((?P<const>const_)?gimple ' + named_identifier_group('param') + '(?P<extra_args>[^)]*?)\)\n'
     + r'{\n'
-    + '  (?P<check_stmt>GIMPLE_CHECK \((?P<param>gs?), (?P<gimple_code>[A-Z_]+?)\));\n'
+    + '  (?P<check_stmt>GIMPLE_CHECK \((?P=param), (?P<gimple_code>[A-Z_]+?)\));\n'
     + '  (?P<body>[^}]+?)\n'
     + '}\n')
 downcast_pattern = re.compile(DOWNCAST_PATTERN, re.MULTILINE | re.DOTALL)
 
 DOWNCAST_PATTERN2 = (
     '\n'
-    + identifier_group + r' \((?P<const>const_)?gimple gs?(?P<extra_args>[^)]*?)\)\n'
+    + identifier_group + r' \((?P<const>const_)?gimple ' + named_identifier_group('param') + '(?P<extra_args>[^)]*?)\)\n'
     + '{\n'
-    + '  (?P<check_stmt>if \(gimple_code \(gs?\) != (?P<gimple_code>[A-Z_]+?)\)' + '\n'
-    + '    GIMPLE_CHECK \((?P<param>gs?), [A-Z_]+?\));' + '\n'
+    + '  (?P<check_stmt>if \(gimple_code \((?P=param)\) != (?P<gimple_code>[A-Z_]+?)\)' + '\n'
+    + '    GIMPLE_CHECK \((?P=param), [A-Z_]+?\));' + '\n'
     + '  (?P<body>[^}]+?)\n'
     + '}\n')
 downcast_pattern2 = re.compile(DOWNCAST_PATTERN2, re.MULTILINE | re.DOTALL)
@@ -159,7 +160,7 @@ def add_downcast(gt, scopes, src, pattern, is_a_helpers):
             #print(parent)
             union_field = gt.get_union_field(parent)
             #print(union_field)
-            for m2 in list(re.finditer('(gs?->%s.)' % union_field,
+            for m2 in list(re.finditer('(%s->%s.)' % (param, union_field),
                                        body))[::-1]:
                 body = (body[:m2.start()]
                         + ('%s->' % instance_name)

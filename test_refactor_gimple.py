@@ -337,5 +337,28 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
+    def test_gimple_call_clobber_set(self):
+        # This one has a param that isn't named "gs" or "g"
+        src = (
+            'static inline struct pt_solution *\n'
+            'gimple_call_clobber_set (gimple call)\n'
+            '{\n'
+            '  GIMPLE_CHECK (call, GIMPLE_CALL);\n'
+            '  return &call->gimple_call.call_clobbered;\n'
+            '}\n')
+        expected_code = (
+            'static inline struct pt_solution *\n'
+            'gimple_call_clobber_set (gimple call)\n'
+            '{\n'
+            '  gimple_statement_call *call_stmt = as_a <gimple_statement_call> (call);\n'
+            '  return &call_stmt->call_clobbered;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_call_clobber_set): Update for conversion of gimple\n'
+             '\ttypes to a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+
 if __name__ == '__main__':
     unittest.main()

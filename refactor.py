@@ -11,7 +11,10 @@ import textwrap
 # Regex components
 ############################################################################
 ws = '\s+'
-identifier_group = '([_a-zA-Z][_a-zA-Z0-9]*?)'
+identifier = '[_a-zA-Z][_a-zA-Z0-9]*?'
+identifier_group = '(%s)' % identifier
+def named_identifier_group(name):
+    return '(?P<%s>%s)' % (name, identifier)
 
 ############################################################################
 # Generic hooks
