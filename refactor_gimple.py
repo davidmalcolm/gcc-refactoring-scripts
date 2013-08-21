@@ -133,7 +133,7 @@ class GimpleTypes:
                 # We have the list; reverse it:
                 return result[::-1]
 
-def add_downcast(gt, scopes, src, pattern):
+def add_downcast(gt, scopes, src, pattern, is_a_helpers):
     # Potentially introduce an "as_a<>" downcast to access
     # fields of a subclass:
     changes = 0
@@ -182,10 +182,35 @@ def add_downcast(gt, scopes, src, pattern):
                                   const, subclass, param))
             src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                               replacement)
+            is_a_helpers.add( ('%s%s' % (const, subclass), gimple_code) )
             if scope not in scopes:
                 scopes[scope] = scope
             changes += 1
     return src, changes
+
+def add_is_a_helpers(changelog, src, is_a_helpers):
+    m = src.search('(#undef DEFGSSTRUCT\n)')
+    if m:
+        helpers = ''
+        for type_, code_ in sorted(is_a_helpers):
+            basetype = ('const_gimple'
+                        if type_.startswith('const')
+                        else 'gimple')
+            helpers += (
+                '\n'
+                'template <>\n'
+                'template <>\n'
+                'inline bool\n'
+                'is_a_helper <%s>::test (%s gs)\n'
+                '{\n'
+                '  return gs->code == %s;\n'
+                '}\n') % (type_, basetype, code_)
+            changelog.append('is_a_helper <%s> (%s)' % (type_, basetype),
+                             'New.')
+        src = src.replace(m.end(1), m.end(1),
+                          helpers)
+        # FIXME: changelog
+    return src
 
 def convert_to_inheritance(clog_filename, src):
     """
@@ -195,6 +220,8 @@ def convert_to_inheritance(clog_filename, src):
         "->"
     """
     gt = GimpleTypes()
+
+    is_a_helpers = set()
 
     changelog = Changelog(clog_filename)
     scopes = OrderedDict()
@@ -209,15 +236,19 @@ def convert_to_inheritance(clog_filename, src):
                 scopes[scope] = scope
             continue
 
-        src, changes = add_downcast(gt, scopes, src, downcast_pattern)
+        src, changes = add_downcast(gt, scopes, src, downcast_pattern,
+                                    is_a_helpers)
         if changes:
             continue
-        src, changes = add_downcast(gt, scopes, src, downcast_pattern2)
+        src, changes = add_downcast(gt, scopes, src, downcast_pattern2,
+                                    is_a_helpers)
         if changes:
             continue
 
         # no matches:
         break
+
+    src = add_is_a_helpers(changelog, src, is_a_helpers)
 
     for scope in scopes:
         changelog.append(scope,

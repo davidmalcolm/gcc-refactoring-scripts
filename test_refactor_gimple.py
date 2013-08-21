@@ -6,25 +6,6 @@ from refactor_gimple import convert_to_inheritance, GimpleTypes
 def make_expected_changelog(filename, scope, text):
     return wrap('\t* %s (%s): %s' % (filename, scope, text))
 
-"""
-+template <>
-+template <>
-+inline bool
-+is_a_helper <gimple_statement_transaction>::test (gimple gs)
-+{
-+  return gs->code == GIMPLE_TRANSACTION;
-+}
-+
-+template <>
-+template <>
-+inline bool
-+is_a_helper <const gimple_statement_transaction>::test (const_gimple gs)
-+{
-+  return gs->code == GIMPLE_TRANSACTION;
-+}
-+
-"""
-
 class Tests(unittest.TestCase):
     def assertRefactoredCodeEquals(self,
                                    src, filename,
@@ -91,6 +72,8 @@ class Tests(unittest.TestCase):
 
     def test_adding_as_a(self):
         src = (
+            '#undef DEFGSSTRUCT\n'
+            '\n'
             'static inline void\n'
             'gimple_eh_else_set_e_body (gimple gs, gimple_seq seq)\n'
             '{\n'
@@ -98,6 +81,16 @@ class Tests(unittest.TestCase):
             '  gs->gimple_eh_else.e_body = seq;\n'
             '}\n')
         expected_code = (
+            '#undef DEFGSSTRUCT\n'
+            '\n'
+            'template <>\n'
+            'template <>\n'
+            'inline bool\n'
+            'is_a_helper <gimple_statement_eh_else>::test (gimple gs)\n'
+            '{\n'
+            '  return gs->code == GIMPLE_EH_ELSE;\n'
+            '}\n'
+            '\n'
             'static inline void\n'
             'gimple_eh_else_set_e_body (gimple gs, gimple_seq seq)\n'
             '{\n'
@@ -106,8 +99,9 @@ class Tests(unittest.TestCase):
             '  eh_else_stmt->e_body = seq;\n'
             '}\n')
         expected_changelog = \
-            ('\t* gimple.h (gimple_eh_else_set_e_body): Update for conversion of\n'
-             '\tgimple types to a true class hierarchy.\n')
+            ('\t* gimple.h (is_a_helper <gimple_statement_eh_else> (gimple)): New.\n'
+             '\t(gimple_eh_else_set_e_body): Update for conversion of gimple types to\n'
+             '\ta true class hierarchy.\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
