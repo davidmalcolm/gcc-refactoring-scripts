@@ -359,6 +359,63 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
+    def test_has_mem_ops(self):
+        src = (
+            'static inline void\n'
+            'gimple_set_use_ops (gimple g, struct use_optype_d *use)\n'
+            '{\n'
+            '  gimple_statement_with_ops *ops_stmt =\n'
+            '    as_a <gimple_statement_with_ops> (g);\n'
+            '  ops_stmt->use_ops = use;\n'
+            '}\n'
+            '\n'
+            '\n'
+            '/* Return the set of VUSE operand for statement G.  */\n'
+            '\n'
+            'static inline use_operand_p\n'
+            'gimple_vuse_op (const_gimple g)\n'
+            '{\n'
+            '  struct use_optype_d *ops;\n'
+            '  if (!gimple_has_mem_ops (g))\n'
+            '    return NULL_USE_OPERAND_P;\n'
+            '  ops = g->gsops.opbase.use_ops;\n'
+            '  if (ops\n'
+            '      && USE_OP_PTR (ops)->use == &g->gsmembase.vuse)\n'
+            '    return USE_OP_PTR (ops);\n'
+            '  return NULL_USE_OPERAND_P;\n'
+            '}\n')
+        expected_code = (
+            'static inline void\n'
+            'gimple_set_use_ops (gimple g, struct use_optype_d *use)\n'
+            '{\n'
+            '  gimple_statement_with_ops *ops_stmt =\n'
+            '    as_a <gimple_statement_with_ops> (g);\n'
+            '  ops_stmt->use_ops = use;\n'
+            '}\n'
+            '\n'
+            '\n'
+            '/* Return the set of VUSE operand for statement G.  */\n'
+            '\n'
+            'static inline use_operand_p\n'
+            'gimple_vuse_op (const_gimple g)\n'
+            '{\n'
+            '  struct use_optype_d *ops;\n'
+            '  const gimple_statement_with_memory_ops *mem_ops_stmt =\n'
+            '     dyn_cast <const gimple_statement_with_memory_ops> (g);\n'
+            '  if (!mem_ops_stmt)\n'
+            '    return NULL_USE_OPERAND_P;\n'
+            '  ops = mem_ops_stmt->use_ops;\n'
+            '  if (ops\n'
+            '      && USE_OP_PTR (ops)->use == &mem_ops_stmt->vuse)\n'
+            '    return USE_OP_PTR (ops);\n'
+            '  return NULL_USE_OPERAND_P;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_vuse_op): Update for conversion of gimple types to\n'
+             '\ta true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
 
 if __name__ == '__main__':
     unittest.main()

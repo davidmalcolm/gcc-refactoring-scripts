@@ -8,6 +8,16 @@ from refactor import main, Changelog, ws, identifier_group, \
 PATTERN = r'->(gsbase\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
 
+PATTERN2 = ('\n'
+            + identifier_group + r' \((?P<const>const_)?gimple ' + named_identifier_group('param') + '(?P<extra_args>[^)]*?)\)\n'
+            + r'{\n'
+            + '(?P<header>[^}]*?)'
+            + r'(?P<cond>  if \(!gimple_has_mem_ops \(g\)\)\n'
+            + '    return ).+?\n'
+            + '(?P<code>.+?)\n'
+            + '}\n')
+pattern2 = re.compile(PATTERN2, re.MULTILINE | re.DOTALL)
+
 DOWNCAST_PATTERN = (
     '\n'
     + identifier_group + r' \((?P<const>const_)?gimple ' + named_identifier_group('param') + '(?P<extra_args>[^)]*?)\)\n'
@@ -67,8 +77,13 @@ class GimpleTypes:
         union gimple_statement_d
         """
         assert struct.startswith('gimple_statement_')
-        if struct == 'gimple_statement_omp':
-            return 'omp'
+        specialcases = {'gimple_statement_base': 'gsbase',
+                        'gimple_statement_with_ops': 'gsops',
+                        'gimple_statement_with_memory_ops_base': 'gsmembase',
+                        'gimple_statement_with_memory_ops': 'gsmem',
+                        'gimple_statement_omp': 'omp'}
+        if struct in specialcases:
+            return specialcases[struct]
         else:
             # Convert 'gimple_statement_' prefix to 'gimple_':
             return 'gimple_' + struct[len('gimple_statement_'):]
@@ -134,6 +149,35 @@ class GimpleTypes:
                 # We have the list; reverse it:
                 return result[::-1]
 
+def eliminate_union_access(code_, gt, subclass, param, instance_name):
+    # Replace uses of  "gs->some_union" with just "some_stmt->",
+    # for those unions that are within the inheritance chain of the
+    # subclass being checked for.
+    subclass_uses = 0
+
+    # Some existing code unnecessarily goes through
+    # gimple_statement_with_ops:
+    #   "g->gsops.opbase."
+    # which confuses the rewriter below.
+    # It can simply be rewritten as:
+    #   "g->gsbase."
+    # Rewrite such uses:
+    while '->gsops.opbase' in code_:
+        code_ = code_.replace('->gsops.opbase.', '->gsbase.')
+        subclass_uses += 1
+
+    for parent in gt.get_parent_classes(subclass):
+        #print('parent: %r' % parent)
+        union_field = gt.get_union_field(parent)
+        #print('union_field: %r' % union_field)
+        for m2 in list(re.finditer('(%s->%s.)' % (param, union_field),
+                                   code_))[::-1]:
+            code_ = (code_[:m2.start()]
+                     + ('%s->' % instance_name)
+                     +  code_[m2.end():])
+            subclass_uses += 1
+    return code_, subclass_uses
+
 def add_downcast(gt, scopes, src, pattern, is_a_helpers):
     # Potentially introduce an "as_a<>" downcast to access
     # fields of a subclass:
@@ -152,20 +196,9 @@ def add_downcast(gt, scopes, src, pattern, is_a_helpers):
         subclass = gt.get_struct_for_gimple_code(gimple_code)
 
         # Consider downcasting "gimple gs" to "someclass some_stmt"
-        # Replace uses of  "gs->some_union" with just "some_stmt->",
-        # for those unions that are within the inheritance chain of the
-        # subclass being checked for.
-        subclass_uses = 0
-        for parent in gt.get_parent_classes(subclass):
-            #print(parent)
-            union_field = gt.get_union_field(parent)
-            #print(union_field)
-            for m2 in list(re.finditer('(%s->%s.)' % (param, union_field),
-                                       body))[::-1]:
-                body = (body[:m2.start()]
-                        + ('%s->' % instance_name)
-                        +  body[m2.end():])
-                subclass_uses += 1
+        body, subclass_uses = \
+            eliminate_union_access(body, gt, subclass,
+                                   param, instance_name)
 
         # If we would need to replace any union references, convert
         # the check into a checked downcast, and perform the
@@ -244,6 +277,30 @@ def convert_to_inheritance(clog_filename, src):
         src, changes = add_downcast(gt, scopes, src, downcast_pattern2,
                                     is_a_helpers)
         if changes:
+            continue
+
+        m = src.search(pattern2)
+        if m:
+            gd = m.groupdict()
+            code_ = gd['code']
+            #print(code_)
+            scope = src.get_change_scope_at(m.start('code'))
+            if scope not in scopes:
+                scopes[scope] = scope
+            code_, subclass_uses = \
+                eliminate_union_access(code_, gt,
+                                       'gimple_statement_with_memory_ops',
+                                       'g', 'mem_ops_stmt')
+            #print(code_)
+            if subclass_uses > 0:
+                src = src.replace(m.start('code'), m.end('code'), code_)
+            const = 'const ' if (gd['const'] == 'const_') else ''
+            replacement = (
+                '  %sgimple_statement_with_memory_ops *mem_ops_stmt =\n'
+                '     dyn_cast <%sgimple_statement_with_memory_ops> (g);\n'
+                '  if (!mem_ops_stmt)\n'
+                '    return ' % (const, const))
+            src = src.replace(m.start('cond'), m.end('cond'), replacement)
             continue
 
         # no matches:
