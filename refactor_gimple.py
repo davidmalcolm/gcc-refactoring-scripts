@@ -240,7 +240,7 @@ def add_downcast(gt, scopes, src, pattern, is_a_helpers):
                                   const, subclass, param))
             src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                               replacement)
-            is_a_helpers.add(subclass)
+            is_a_helpers.add( (gd['const'], subclass) )
             if scope not in scopes:
                 scopes[scope] = scope
             changes += 1
@@ -249,14 +249,15 @@ def add_downcast(gt, scopes, src, pattern, is_a_helpers):
 def add_is_a_helpers(changelog, src, is_a_helpers, gt):
     m = src.search('(#undef DEFGSSTRUCT\n)')
     if m:
-        print(is_a_helpers)
         helpers = ''
-        for type_ in sorted(is_a_helpers):
+        for const, type_ in sorted(is_a_helpers):
             codes = gt.get_codes_for_struct(type_)
             assert codes
-            basetype = ('const_gimple'
-                        if type_.startswith('const')
-                        else 'gimple')
+            if const:
+                type_ = 'const ' + type_
+                basetype = 'const_gimple'
+            else:
+                basetype = 'gimple'
             test = '|| '.join('gs->code == %s' % code_
                               for code_ in codes)
             helpers += (
