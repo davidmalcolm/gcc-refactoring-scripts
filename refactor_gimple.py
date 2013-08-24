@@ -272,7 +272,6 @@ def add_is_a_helpers(changelog, src, is_a_helpers, gt):
                              'New.')
         src = src.replace(m.end(1), m.end(1),
                           helpers)
-        # FIXME: changelog
     return src
 
 def convert_to_inheritance(clog_filename, src):
