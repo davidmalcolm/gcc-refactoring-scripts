@@ -51,6 +51,9 @@ class Tests(unittest.TestCase):
                           'gimple_statement_omp_parallel',
                           'gimple_statement_omp_task'])
 
+        self.assertEqual(gt.get_codes_for_struct('gimple_statement_eh_else'),
+                         ['GIMPLE_EH_ELSE'])
+
     def test_removing_gsbase(self):
         src = (
             'static inline enum gimple_code\n'

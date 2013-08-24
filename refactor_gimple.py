@@ -149,6 +149,30 @@ class GimpleTypes:
                 # We have the list; reverse it:
                 return result[::-1]
 
+    def get_derived_classes(self, struct):
+        result = [struct]
+        for cand in self.parentclasses:
+            if struct == self.parentclasses[cand]:
+                result.append(self.get_derived_classes(cand))
+        return result
+
+    def iter_gimple_codes(self):
+        for item in self.gimple_defs:
+            yield item[0]
+
+    def get_codes_for_struct(self, struct):
+        """
+        Get the enum gimple_code values for which a gimple can be cast to
+        the given subclass
+        """
+        result = []
+        subclasses = self.get_derived_classes(struct)
+        for gimple_code in self.iter_gimple_codes():
+            struct = self.get_struct_for_gimple_code(gimple_code)
+            if struct in subclasses:
+                result.append(gimple_code)
+        return result
+
 def eliminate_union_access(code_, gt, subclass, param, instance_name):
     # Replace uses of  "gs->some_union" with just "some_stmt->",
     # for those unions that are within the inheritance chain of the
@@ -216,20 +240,25 @@ def add_downcast(gt, scopes, src, pattern, is_a_helpers):
                                   const, subclass, param))
             src = src.replace(m.start('check_stmt'), m.end('check_stmt'),
                               replacement)
-            is_a_helpers.add( ('%s%s' % (const, subclass), gimple_code) )
+            is_a_helpers.add(subclass)
             if scope not in scopes:
                 scopes[scope] = scope
             changes += 1
     return src, changes
 
-def add_is_a_helpers(changelog, src, is_a_helpers):
+def add_is_a_helpers(changelog, src, is_a_helpers, gt):
     m = src.search('(#undef DEFGSSTRUCT\n)')
     if m:
+        print(is_a_helpers)
         helpers = ''
-        for type_, code_ in sorted(is_a_helpers):
+        for type_ in sorted(is_a_helpers):
+            codes = gt.get_codes_for_struct(type_)
+            assert codes
             basetype = ('const_gimple'
                         if type_.startswith('const')
                         else 'gimple')
+            test = '|| '.join('gs->code == %s' % code_
+                              for code_ in codes)
             helpers += (
                 '\n'
                 'template <>\n'
@@ -237,8 +266,8 @@ def add_is_a_helpers(changelog, src, is_a_helpers):
                 'inline bool\n'
                 'is_a_helper <%s>::test (%s gs)\n'
                 '{\n'
-                '  return gs->code == %s;\n'
-                '}\n') % (type_, basetype, code_)
+                '  return %s;\n'
+                '}\n') % (type_, basetype, test)
             changelog.append('is_a_helper <%s> (%s)' % (type_, basetype),
                              'New.')
         src = src.replace(m.end(1), m.end(1),
@@ -306,7 +335,7 @@ def convert_to_inheritance(clog_filename, src):
         # no matches:
         break
 
-    src = add_is_a_helpers(changelog, src, is_a_helpers)
+    src = add_is_a_helpers(changelog, src, is_a_helpers, gt)
 
     for scope in scopes:
         changelog.append(scope,
