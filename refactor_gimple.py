@@ -153,7 +153,7 @@ class GimpleTypes:
         result = [struct]
         for cand in self.parentclasses:
             if struct == self.parentclasses[cand]:
-                result.append(self.get_derived_classes(cand))
+                result.append(*self.get_derived_classes(cand))
         return result
 
     def iter_gimple_codes(self):
@@ -258,8 +258,8 @@ def add_is_a_helpers(changelog, src, is_a_helpers, gt):
                 basetype = 'const_gimple'
             else:
                 basetype = 'gimple'
-            test = '|| '.join('gs->code == %s' % code_
-                              for code_ in codes)
+            test = ' || '.join('gs->code == %s' % code_
+                               for code_ in codes)
             helpers += (
                 '\n'
                 'template <>\n'

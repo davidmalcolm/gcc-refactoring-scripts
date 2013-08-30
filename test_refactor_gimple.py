@@ -54,6 +54,11 @@ class Tests(unittest.TestCase):
         self.assertEqual(gt.get_codes_for_struct('gimple_statement_eh_else'),
                          ['GIMPLE_EH_ELSE'])
 
+        self.assertEqual(gt.get_derived_classes('gimple_statement_omp_parallel'),
+                         ['gimple_statement_omp_parallel', 'gimple_statement_omp_task'])
+        self.assertEqual(gt.get_codes_for_struct('gimple_statement_omp_parallel'),
+                         ['GIMPLE_OMP_PARALLEL', 'GIMPLE_OMP_TASK'])
+
     def test_removing_gsbase(self):
         src = (
             'static inline enum gimple_code\n'
@@ -233,9 +238,11 @@ class Tests(unittest.TestCase):
         #   "either GIMPLE_OMP_TASK or GIMPLE_OMP_PARALLEL"
         # Given that gimple_statement_omp_task is a subclass of
         # gimple_statement_omp_parallel we can simply check against
-        # the base class:
-        # FIXME: what should  as_a <gimple_statement_omp_parallel>  look like?
+        # the base class; the generated is_a_helper needs to reflect
+        # this.
         src = (
+            '#undef DEFGSSTRUCT\n'
+            '\n'
             'static inline tree *\n'
             'gimple_omp_taskreg_child_fn_ptr (gimple gs)\n'
             '{\n'
@@ -244,6 +251,16 @@ class Tests(unittest.TestCase):
             '  return &gs->gimple_omp_parallel.child_fn;\n'
             '}\n')
         expected_code = (
+            '#undef DEFGSSTRUCT\n'
+            '\n'
+            'template <>\n'
+            'template <>\n'
+            'inline bool\n'
+            'is_a_helper <gimple_statement_omp_parallel>::test (gimple gs)\n'
+            '{\n'
+            '  return gs->code == GIMPLE_OMP_PARALLEL || gs->code == GIMPLE_OMP_TASK;\n'
+            '}\n'
+            '\n'
             'static inline tree *\n'
             'gimple_omp_taskreg_child_fn_ptr (gimple gs)\n'
             '{\n'
@@ -252,8 +269,10 @@ class Tests(unittest.TestCase):
             '  return &omp_parallel_stmt->child_fn;\n'
             '}\n')
         expected_changelog = \
-            ('\t* gimple.h (gimple_omp_taskreg_child_fn_ptr): Update for conversion of\n'
-             '\tgimple types to a true class hierarchy.\n')
+            ('\t* gimple.h (is_a_helper <gimple_statement_omp_parallel> (gimple)):\n'
+             '\tNew.\n'
+             '\t(gimple_omp_taskreg_child_fn_ptr): Update for conversion of gimple\n'
+             '\ttypes to a true class hierarchy.\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
