@@ -66,6 +66,15 @@ class GeneralTests(unittest.TestCase):
         self.assertFalse(Source('foo').within_comment_at(1024))
         self.assertFalse(Source('/* foo */ /').within_comment_at(1024))
 
+    def test_get_line_at(self):
+        src = Source('foo\nbar\nbaz')
+        self.assertEqual(src.get_line_at(0), 'foo')
+        self.assertEqual(src.get_line_at(3), 'foo')
+        self.assertEqual(src.get_line_at(4), 'bar')
+        self.assertEqual(src.get_line_at(7), 'bar')
+        self.assertEqual(src.get_line_at(8), 'baz')
+        self.assertEqual(src.get_line_at(11), 'baz')
+
 class ChangeLogTests(unittest.TestCase):
     # Constructing a ChangeLogLayout is somewhat expensive, so only
     # do it once, shared by all the cases:

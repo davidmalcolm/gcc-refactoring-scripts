@@ -184,6 +184,15 @@ class Source:
         else:
             return self._str
 
+    def get_line_at(self, index):
+        start = self._str.rfind('\n', 0, index) + 1
+        if start == -1:
+            start = 0
+        end = self._str.find('\n', index)
+        if end == -1:
+            end = len(self._str)
+        return self._str[start:end]
+
     def show_changes(self):
         sys.stdout.write('\n\n')
         sys.stdout.write(self._str)
