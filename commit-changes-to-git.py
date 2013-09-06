@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from collections import namedtuple
 import os
 import re
