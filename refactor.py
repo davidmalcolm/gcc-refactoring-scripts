@@ -258,7 +258,7 @@ class Source:
     CLASS_PATTERN = (r'^struct GTY\(\(.+\)\)' + ws + named_identifier_group('CLASS')
                      + ws + ':' + ws + 'public' + ws + '$')
     FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
-    def get_change_scope_at(self, idx):
+    def get_change_scope_at(self, idx, raise_exception=False):
         src = self._str[:idx]
         if 0:
             print('get_change_scope_at: %r' % src)
@@ -291,6 +291,11 @@ class Source:
             pass
         if m:
             return m.groupdict()['FUNCNAME']
+
+        # Not found
+        if raise_exception:
+            raise ValueError('could not locate scope at line: %r'
+                             % self.get_line_at(idx))
 
     def get_changed_lines(self):
         """

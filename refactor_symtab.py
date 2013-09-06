@@ -23,14 +23,21 @@ def convert_to_inheritance(clog_filename, src):
     changelog = Changelog(clog_filename)
     scopes = OrderedDict()
     for m in src.finditer(pattern):
-        scope = src.get_change_scope_at(m.start())
+        try:
+            scope = src.get_change_scope_at(m.start(), raise_exception=True)
+        except ValueError:
+            line = src.get_line_at(m.start())
+            if line == '    return p->symbol.type == SYMTAB_FUNCTION;':
+                scope = 'is_a_helper <cgraph_node>::test (symtab_node_base *)'
+            else:
+                raise
         replacement = '->' + m.group(2)
         src = src.replace(m.start(), m.end(), replacement)
         if scope not in scopes:
             scopes[scope] = scope
 
     for m in src.finditer(upcast_pattern):
-        scope = src.get_change_scope_at(m.start())
+        scope = src.get_change_scope_at(m.start(), raise_exception=True)
         replacement = ''
         start, end = m.start(1), m.end(1)
         if src._str[end] == ' ':
