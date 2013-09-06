@@ -86,5 +86,47 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cgraph.c',
                                      expected_code, expected_changelog)
 
+    def test_removing_upcast(self):
+        src = (
+            'void\n'
+            'dump_cgraph_node (FILE *f, struct cgraph_node *node)\n'
+            '{\n'
+            '  struct cgraph_edge *edge;\n'
+            '  int indirect_calls_count = 0;\n'
+            '\n'
+            '  dump_symtab_base (f, (symtab_node) node);\n'
+            '  /* snip */\n'
+            '}\n')
+        expected_code = (
+            'void\n'
+            'dump_cgraph_node (FILE *f, struct cgraph_node *node)\n'
+            '{\n'
+            '  struct cgraph_edge *edge;\n'
+            '  int indirect_calls_count = 0;\n'
+            '\n'
+            '  dump_symtab_base (f, node);\n'
+            '  /* snip */\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* cgraph.c (dump_cgraph_node): Update for conversion of symtab types\n'
+             '\tto a true class hierarchy.\n')
+        self.assertRefactoringEquals(src, 'cgraph.c',
+                                     expected_code, expected_changelog)
+
+    def test_prototypes_are_not_casts(self):
+        src = (
+            'void symtab_register_node (symtab_node);\n'
+            'void symtab_unregister_node (symtab_node);\n'
+            'void symtab_remove_node (symtab_node);\n')
+        self.assertUnchanged(src, 'cgraph.h')
+
+    def test_leave_interesting_casts(self):
+        src = (
+            'bool\n'
+            'symtab_remove_unreachable_nodes (bool before_inlining_p, FILE *file)\n'
+            '{\n'
+            '  symtab_node first = (symtab_node) (void *) 1;\n')
+        self.assertUnchanged(src, 'cgraph.h')
+
 if __name__ == '__main__':
     unittest.main()

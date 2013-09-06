@@ -11,6 +11,7 @@ import textwrap
 # Regex components
 ############################################################################
 ws = '\s+'
+opt_ws = '\s*'
 identifier = '[_a-zA-Z][_a-zA-Z0-9]*?'
 identifier_group = '(%s)' % identifier
 def named_identifier_group(name):
