@@ -258,6 +258,7 @@ class Source:
     CLASS_PATTERN = (r'^struct GTY\(\(.+\)\)' + ws + named_identifier_group('CLASS')
                      + ws + ':' + ws + 'public' + ws + '$')
     FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
+    GLOBAL_PATTERN = (r'(?P<TYPE>.+?)\s+' + named_identifier_group('GLOBAL') + opt_ws + ';')
     def get_change_scope_at(self, idx, raise_exception=False):
         src = self._str[:idx]
         if 0:
@@ -291,6 +292,10 @@ class Source:
             pass
         if m:
             return m.groupdict()['FUNCNAME']
+        for m in re.finditer(self.GLOBAL_PATTERN, line, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return m.groupdict()['GLOBAL']
 
         # Not found
         if raise_exception:

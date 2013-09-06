@@ -64,5 +64,18 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cgraph.h',
                                      expected_code, expected_changelog)
 
+    def test_globals(self):
+        src = (
+            '/* Queue of cgraph nodes scheduled to be lowered.  */\n'
+            'symtab_node x_cgraph_nodes_queue;\n')
+        expected_code = (
+            '/* Queue of cgraph nodes scheduled to be lowered.  */\n'
+            'symtab_node *x_cgraph_nodes_queue;\n')
+        expected_changelog = \
+            ('\t* cgraph.c (x_cgraph_nodes_queue): Rename symtab_node_base to\n'
+             '\tsymtab_node.\n')
+        self.assertRefactoringEquals(src, 'cgraph.c',
+                                     expected_code, expected_changelog)
+
 if __name__ == '__main__':
     unittest.main()
