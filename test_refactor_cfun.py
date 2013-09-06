@@ -30,7 +30,7 @@ class MacroTests(unittest.TestCase):
         expected_code = (
             '    FOR_EACH_EDGE (e, ei, cfun->cfg->entry_block_ptr->succs)\n')
         expected_changelog = \
-            '\t* bb-reorder.c (None): Remove usage of ENTRY_BLOCK_PTR macro.\n'
+            '\t* bb-reorder.c (FOR_EACH_EDGE): Remove usage of ENTRY_BLOCK_PTR macro.\n'
         self.assertRefactoringEquals(src, 'bb-reorder.c',
                                      expected_code, expected_changelog)
 

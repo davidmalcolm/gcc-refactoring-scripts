@@ -248,20 +248,49 @@ class Source:
         # This doesn't handle escaped quotes, and quotes within comments
         return self._str[:idx].count('"') % 2
 
-    FUNC_PATTERN=r'^(?P<FUNCNAME>[_a-zA-Z0-9]+) \((?P<PARAMS>.*?)\)\n{'
+    FUNC_PATTERN = ('^' + named_identifier_group('FUNCNAME')
+                    + r' \((?P<PARAMS>.*?)\)\n{')
+    METHOD_PATTERN = (r'(?P<CLASS_NAME>[_a-zA-Z][^\n]*?)::'
+                      + named_identifier_group('METHOD_NAME')
+                      + r'\s+\((?P<PARAMS>.*?)\)\n{')
     MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*?\)\s+\\\n'
+    FUNC_PARAMS_PATTERN = (ws + named_identifier_group('FUNCNAME') + opt_ws + '\($')
+    CLASS_PATTERN = (r'^struct GTY\(\(.+\)\)' + ws + named_identifier_group('CLASS')
+                     + ws + ':' + ws + 'public' + ws + '$')
+    FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     def get_change_scope_at(self, idx):
         src = self._str[:idx]
+        if 0:
+            print('get_change_scope_at: %r' % src)
         # Get last matches, if any:
         m = None
         for m in re.finditer(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL):
             pass
         if m:
             return m.groupdict()['FUNCNAME']
+        for m in re.finditer(self.METHOD_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            gd = m.groupdict()
+            return ('%s::%s' %
+                    (gd['CLASS_NAME'], gd['METHOD_NAME']))
         for m in re.finditer(self.MACRO_PATTERN, src, re.MULTILINE | re.DOTALL):
             pass
         if m:
             return m.groupdict()['MACRO']
+        for m in re.finditer(self.FUNC_PARAMS_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return m.groupdict()['FUNCNAME']
+        for m in re.finditer(self.CLASS_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return m.groupdict()['CLASS']
+        line = self.get_line_at(idx)
+        for m in re.finditer(self.FUNC_RETURN_PATTERN, line, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return m.groupdict()['FUNCNAME']
 
     def get_changed_lines(self):
         """

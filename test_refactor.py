@@ -60,6 +60,27 @@ class GeneralTests(unittest.TestCase):
                          .get_change_scope_at(4096),
                          'REG_FREQ_FROM_EDGE_FREQ')
 
+        self.assertEqual(Source(
+                'inline bool\n'
+                'is_a_helper <cgraph_node>::test (symtab_node_base *p)\n'
+                '{\n').get_change_scope_at(4096),
+                         'is_a_helper <cgraph_node>::test')
+
+        """
+        # This one is complicated by the leading whitespace:
+        self.assertEqual(Source(
+                '\n'
+                '  template <>\n'
+                '  template <>\n'
+                '  inline bool\n'
+                '  is_a_helper <cgraph_node>::test (symtab_node_base *p)\n'
+                '  {\n'
+                '    return p->symbol.type == SYMTAB_FUNCTION;\n'
+                '  }\n'
+                '\n').get_change_scope_at(4096),
+                         'is_a_helper <cgraph_node>::test')
+        """
+
     def test_within_comment(self):
         self.assertTrue(Source('/* foo').within_comment_at(1024))
         self.assertFalse(Source('/* foo */').within_comment_at(1024))
