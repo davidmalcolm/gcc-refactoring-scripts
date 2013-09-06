@@ -28,7 +28,7 @@ def convert_to_inheritance(clog_filename, src):
         except ValueError:
             line = src.get_line_at(m.start())
             if line == '    return p->symbol.type == SYMTAB_FUNCTION;':
-                scope = 'is_a_helper <cgraph_node>::test (symtab_node_base *)'
+                scope = 'is_a_helper <cgraph_node>::test'
             else:
                 raise
         replacement = '->' + m.group(2)
