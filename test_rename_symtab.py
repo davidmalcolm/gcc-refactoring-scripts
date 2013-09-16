@@ -77,5 +77,47 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cgraph.c',
                                      expected_code, expected_changelog)
 
+    def test_is_a_helper(self):
+        src = (
+            'template <>\n'
+            'template <>\n'
+            'inline bool\n'
+            'is_a_helper <cgraph_node>::test (symtab_node_base *p)\n'
+            '{\n'
+            '  return p->type == SYMTAB_FUNCTION;\n'
+            '}\n')
+        expected_code = (
+            'template <>\n'
+            'template <>\n'
+            'inline bool\n'
+            'is_a_helper <cgraph_node>::test (symtab_node *p)\n'
+            '{\n'
+            '  return p->type == SYMTAB_FUNCTION;\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* cgraph.h (is_a_helper <cgraph_node>::test): Rename symtab_node_base\n'
+             '\tto symtab_node.\n')
+        self.assertRefactoringEquals(src, 'cgraph.h',
+                                     expected_code, expected_changelog)
+
+    def test_multiline_params(self):
+        src = (
+            'struct ipa_ref *\n'
+            'ipa_record_reference (symtab_node referring_node,\n'
+            '\t\t      symtab_node referred_node,\n'
+            '\t\t      enum ipa_ref_use use_type, gimple stmt)\n'
+            '{\n')
+        expected_code = (
+            'struct ipa_ref *\n'
+            'ipa_record_reference (symtab_node *referring_node,\n'
+            '\t\t      symtab_node *referred_node,\n'
+            '\t\t      enum ipa_ref_use use_type, gimple stmt)\n'
+            '{\n')
+        expected_changelog = \
+            ('\t* ipa-ref.c (ipa_record_reference): Rename symtab_node_base to\n'
+             '\tsymtab_node.\n')
+        self.assertRefactoringEquals(src, 'ipa-ref.c',
+                                     expected_code, expected_changelog)
+
 if __name__ == '__main__':
     unittest.main()

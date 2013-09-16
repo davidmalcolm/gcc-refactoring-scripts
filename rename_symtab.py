@@ -21,7 +21,11 @@ def rename_types(clog_filename, src):
                      ('const_symtab_node', 'const symtab_node *')):
         # this works backwards through the file
         for m in src.finditer('[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]' % old):
-            scope = src.get_change_scope_at(m.start(1))
+            line = src.get_line_at(m.start(1))
+            if line in ('   The symtab_node is inherited by cgraph and varpol nodes.  */',):
+                continue
+            scope = src.get_change_scope_at(m.start(1),
+                                            raise_exception=True)
             replacement = new
             start, end = m.start(1), m.end(1)
 

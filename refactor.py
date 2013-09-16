@@ -249,13 +249,16 @@ class Source:
         return self._str[:idx].count('"') % 2
 
     FUNC_PATTERN = ('^' + named_identifier_group('FUNCNAME')
-                    + r' \((?P<PARAMS>.*?)\)\n{')
+                    + r' \((?P<PARAMS>.*?)\)')
     METHOD_PATTERN = (r'(?P<CLASS_NAME>[_a-zA-Z][^\n]*?)::'
                       + named_identifier_group('METHOD_NAME')
                       + r'\s+\((?P<PARAMS>.*?)\)\n{')
+    METHOD_ARGS_PATTERN = (r'(?P<CLASS_NAME>[_a-zA-Z][^\n]*?)::'
+                           + named_identifier_group('METHOD_NAME')
+                           + r'\s+\((?P<PARAMS>.*?)\)')
     MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*?\)\s+\\\n'
-    FUNC_PARAMS_PATTERN = (ws + named_identifier_group('FUNCNAME') + opt_ws + '\($')
-    CLASS_PATTERN = (r'^struct GTY\(\(.+\)\)' + ws + named_identifier_group('CLASS')
+    FUNC_PARAMS_PATTERN = (ws + named_identifier_group('FUNCNAME') + opt_ws + '\(')
+    CLASS_PATTERN = (r'^struct' + ws + named_identifier_group('CLASS')
                      + ws + ':' + ws + 'public' + ws + '$')
     FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     GLOBAL_PATTERN = (r'(?P<TYPE>.+?)\s+' + named_identifier_group('GLOBAL') + opt_ws + ';')
@@ -263,6 +266,15 @@ class Source:
         src = self._str[:idx]
         if 0:
             print('get_change_scope_at: %r' % src)
+
+        # Filter out GTY() markers:
+        while 1:
+            m = re.match(r'.*\s+(GTY\(\(.*\)\)\s)+.*', src)
+            if m:
+                src = src[:m.start(1)] + src[m.end(1):]
+            else:
+                break
+
         # Get last matches, if any:
         m = None
         for m in re.finditer(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL):
@@ -296,6 +308,12 @@ class Source:
             pass
         if m:
             return m.groupdict()['GLOBAL']
+        for m in re.finditer(self.METHOD_ARGS_PATTERN, line, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            gd = m.groupdict()
+            return ('%s::%s' %
+                    (gd['CLASS_NAME'], gd['METHOD_NAME']))
 
         # Not found
         if raise_exception:
