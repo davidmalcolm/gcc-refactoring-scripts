@@ -263,6 +263,7 @@ class Source:
     FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     GLOBAL_PATTERN = (r'(?P<TYPE>.+?)\s+' + named_identifier_group('GLOBAL') + opt_ws + ';')
     def get_change_scope_at(self, idx, raise_exception=False):
+        # Look at the text leading up to the index point:
         src = self._str[:idx]
         if 0:
             print('get_change_scope_at: %r' % src)
@@ -299,6 +300,9 @@ class Source:
             pass
         if m:
             return m.groupdict()['CLASS']
+
+        # If that didn't give us a suitable location, look at the line
+        # containing the index point.
         line = self.get_line_at(idx)
         for m in re.finditer(self.FUNC_RETURN_PATTERN, line, re.MULTILINE | re.DOTALL):
             pass
