@@ -136,43 +136,54 @@ def parse_opt_file(path):
             pending.append(line)
     return records
 
-def make_macros_visible(clog_filename, src):
-    records = parse_opt_file('../src/gcc/common.opt')
-    optvarnames = [opt.var
-                   for opt in records
-                   if isinstance(opt, Option)]
-    # Construct regular expressions for matching the varnames.
-    # Must not be preceded by "( ", so that we don't repeatedly
-    # apply the transformation
-    # Must not be followed by a valid identifier character, so
-    # that we don't match other variables which have a matching
-    # initial suffix.
-    patterns = [re.compile(r'[^\(] (%s)[^_a-zA-Z0-9]' % varname, re.MULTILINE | re.DOTALL)
-                for varname in optvarnames]
-    changelog = Changelog(clog_filename)
-    scopes = OrderedDict()
-    while 1:
-        match = 0
-        for pattern in patterns:
-            m = src.search(pattern)
-            if m:
-                scope = src.get_change_scope_at(m.start())
-                replacement = 'GCC_OPTION (%s)' % m.group(1)
-                src = src.replace(m.start(1), m.end(1), replacement)
-                if scope not in scopes:
-                    scopes[scope] = scope
-                match = 1
+class Options:
+    def __init__(self):
+        self.records = parse_opt_file('../src/gcc/common.opt')
+        self.optvarnames = [opt.var
+                            for opt in self.records
+                            if isinstance(opt, Option)]
+        # Construct regular expressions for matching the varnames.
+        # Must not be preceded by "( ", so that we don't repeatedly
+        # apply the transformation
+        # Must not be followed by a valid identifier character, so
+        # that we don't match other variables which have a matching
+        # initial suffix.
+        self.patterns = [re.compile(r'[^\(] (%s)[^_a-zA-Z0-9]' % varname,
+                                    re.MULTILINE | re.DOTALL)
+                         for varname in self.optvarnames]
+        print(len(self.patterns))
 
-        # no matches:
-        if not match:
-            break
+    def make_macros_visible(self,clog_filename, src):
+        changelog = Changelog(clog_filename)
+        scopes = OrderedDict()
+        while 1:
+            match = 0
+            for pattern in self.patterns:
+                m = src.search(pattern)
+                if m:
+                    # Avoid changing variable definitions in print-rtl.c that
+                    # are guarded by #ifdef GENERATOR_FILE:
+                    line = src.get_line_at(m.start(1))
+                    if line.startswith('int') and line.endswith(' = 0;'):
+                        continue
+                    scope = src.get_change_scope_at(m.start())
+                    replacement = 'GCC_OPTION (%s)' % m.group(1)
+                    src = src.replace(m.start(1), m.end(1), replacement)
+                    if scope not in scopes:
+                        scopes[scope] = scope
+                    match = 1
 
-    for scope in scopes:
-        changelog.append(scope,
-                         'Wrap option usage in GCC_OPTION macro.')
+            # no matches:
+            if not match:
+                break
 
-    return src.str(), changelog
+        for scope in scopes:
+            changelog.append(scope,
+                             'Wrap option usage in GCC_OPTION macro.')
+
+        return src.str(), changelog
 
 if __name__ == '__main__':
-    main('refactor_options.py', make_macros_visible, sys.argv,
+    options = Options()
+    main('refactor_options.py', options.make_macros_visible, sys.argv,
          skip_testsuite=True)

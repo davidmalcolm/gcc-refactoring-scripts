@@ -1,7 +1,7 @@
 import unittest
 
 from refactor import wrap, Source
-from refactor_options import make_macros_visible, parse_record, \
+from refactor_options import Options, parse_record, \
     Variable, Option
 
 def make_expected_changelog(filename, scope, text):
@@ -49,17 +49,21 @@ class OptionTests(TestParsingTests):
                    init='0',
                    helptext='Perform Value Range Propagation on trees'))
 
+options = Options()
+
 class IntegrationTests(unittest.TestCase):
     def assertRefactoredCodeEquals(self,
                                    src, filename,
                                    expected_code):
-        actual_code, actual_changelog = make_macros_visible(filename, Source(src))
+        actual_code, actual_changelog = \
+            options.make_macros_visible(filename, Source(src))
         self.maxDiff = 32768
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
     def assertRefactoringEquals(self,
                                 src, filename,
                                 expected_code, expected_changelog):
-        actual_code, actual_changelog = make_macros_visible(filename, Source(src))
+        actual_code, actual_changelog = \
+            options.make_macros_visible(filename, Source(src))
         self.maxDiff = 8192
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
         self.assertMultiLineEqual(expected_changelog,
@@ -90,6 +94,13 @@ class IntegrationTests(unittest.TestCase):
             '   /* True if pedwarns are errors.  */\n'
             '   bool pedantic_errors;\n')
         self.assertUnchanged(src, 'diagnostic.h')
+
+    def test_within_GENERATOR_FILE(self):
+        # A couple of vars in print-rtl.c are wrapped within
+        #   #ifdef GENERATOR_FILE
+        # and must not be changed.
+        src = ('int flag_dump_unnumbered = 0;\n')
+        self.assertUnchanged(src, 'print-rtl.h')
 
 if __name__ == '__main__':
     unittest.main()
