@@ -57,7 +57,7 @@ class Tests(unittest.TestCase):
         self.assertEqual(gt.get_derived_classes('gimple_statement_omp_parallel'),
                          ['gimple_statement_omp_parallel', 'gimple_statement_omp_task'])
         self.assertEqual(gt.get_codes_for_struct('gimple_statement_omp_parallel'),
-                         ['GIMPLE_OMP_PARALLEL', 'GIMPLE_OMP_TASK'])
+                         ['GIMPLE_OMP_PARALLEL', 'GIMPLE_OMP_TASK', 'GIMPLE_OMP_TARGET'])
 
     def test_removing_gsbase(self):
         src = (
@@ -258,7 +258,7 @@ class Tests(unittest.TestCase):
             'inline bool\n'
             'is_a_helper <gimple_statement_omp_parallel>::test (gimple gs)\n'
             '{\n'
-            '  return gs->code == GIMPLE_OMP_PARALLEL || gs->code == GIMPLE_OMP_TASK;\n'
+            '  return gs->code == GIMPLE_OMP_PARALLEL || gs->code == GIMPLE_OMP_TASK || gs->code == GIMPLE_OMP_TARGET;\n'
             '}\n'
             '\n'
             'static inline tree *\n'
