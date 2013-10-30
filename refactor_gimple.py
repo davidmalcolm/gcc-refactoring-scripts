@@ -128,15 +128,18 @@ class GimpleTypes:
         """
         Scrape out the inheritance hierarchy from gimple.h
         """
-        self.parentclasses = {'gimple_statement_base' : None}
+        self.parentclasses = \
+            {'gimple_statement_base' : None,
+             'gimple_statement_with_ops_base' : 'gimple_statement_base'}
+
         with open('../src/gcc/gimple.h') as f:
             txt = f.read()
-            pattern = (r'struct' + ws + 'GTY\(\(user\)\)' + ws
+            pattern = (r'struct' + ws + r'GTY\(\((.*?)\)\)' + ws
                        + identifier_group + ws + ':' + ws + 'public' + ws
                        + identifier_group + ws)
             for m in re.finditer(pattern, txt,
                                  re.MULTILINE | re.DOTALL):
-                self.parentclasses[m.group(1)] = m.group(2)
+                self.parentclasses[m.group(2)] = m.group(3)
 
     def get_parent_classes(self, struct):
         result = [struct]
