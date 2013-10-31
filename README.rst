@@ -23,16 +23,6 @@ inheritance.  A full review will be needed.
 
 .. Note to self: working copy: "gcc-git-gimple-classes"
 
-`rename_symtab.py` (and `test_rename_symtab.py`)
-************************************************
-This is a followup to `refactor_symtab.py` which renames the
-types.
-
-Status: APPROVED (but was blocked for 2 months on gengtype support).  I'm
-currently retesting the patches against the newest baseline code.
-
-.. Note to self: working copy: "gcc-git-cgraph-classes"
-
 `refactor_cfun.py` (and `test_refactor_cfun.py`)
 ************************************************
 Script to replace implicit uses of "cfun" via the preprocessor with
@@ -119,3 +109,11 @@ specifically, to generate r201508.
 ****************************************************
 This converted the symtabs types into a class hierarchy.
 It was used to generate r204171.
+
+`rename_symtab.py` (and `test_rename_symtab.py`)
+************************************************
+This is a followup to `refactor_symtab.py` which renames the
+types (from `symtab_node_base` to `symtab_node`, with various related
+fixups).  It was used to generate r204279.
+
+.. Note to self: working copy: "gcc-git-cgraph-classes"
