@@ -103,17 +103,17 @@ Work that is already in GCC
 `refactor_passes.py` (and `test_refactor_passes.py`)
 ****************************************************
 This was used in the patch series that converted passes to C++ classes,
-specifically, to generate r201508.
+specifically, to generate `r201508 <http://gcc.gnu.org/r201508>`_.
 
 `refactor_symtab.py` (and `test_refactor_symtab.py`)
 ****************************************************
 This converted the symtabs types into a class hierarchy.
-It was used to generate r204171.
+It was used to generate `r204171 <http://gcc.gnu.org/r204171>`_.
 
 `rename_symtab.py` (and `test_rename_symtab.py`)
 ************************************************
 This is a followup to `refactor_symtab.py` which renames the
 types (from `symtab_node_base` to `symtab_node`, with various related
-fixups).  It was used to generate r204279.
+fixups).  It was used to generate `r204279 <http://gcc.gnu.org/r204279>`_.
 
 .. Note to self: working copy: "gcc-git-cgraph-classes"
