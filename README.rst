@@ -15,11 +15,9 @@ Changes that I'm working on
 ****************************************************
 Conversion of gimple to a C++ class hierarchy.
 
-Posted as http://gcc.gnu.org/ml/gcc-patches/2013-08/msg01954.html
+Posted as http://gcc.gnu.org/ml/gcc-patches/2013-10/msg02703.html
 
-Status: IIRC this was blocked by concerns about hand-written GTY hooks.
-I'm working on a fresh version that uses the new gengtype support for
-inheritance.  A full review will be needed.
+Status: Awaiting review.
 
 .. Note to self: working copy: "gcc-git-gimple-classes"
 
