@@ -11,16 +11,6 @@ Files tend to come in pairs: a `foo.py` and a `test_foo.py`.
 Changes that I'm working on
 ---------------------------
 
-`refactor_gimple.py` (and `test_refactor_gimple.py`)
-****************************************************
-Conversion of gimple to a C++ class hierarchy.
-
-Posted as http://gcc.gnu.org/ml/gcc-patches/2013-10/msg02703.html
-
-Status: Awaiting review.
-
-.. Note to self: working copy: "gcc-git-gimple-classes"
-
 `refactor_cfun.py` (and `test_refactor_cfun.py`)
 ************************************************
 Script to replace implicit uses of "cfun" via the preprocessor with
@@ -115,3 +105,11 @@ types (from `symtab_node_base` to `symtab_node`, with various related
 fixups).  It was used to generate `r204279 <http://gcc.gnu.org/r204279>`_.
 
 .. Note to self: working copy: "gcc-git-cgraph-classes"
+
+`refactor_gimple.py` (and `test_refactor_gimple.py`)
+****************************************************
+This was used to help convert gimple's statement types to use C++
+inheritance, specically, to generate part of
+`r205034 <http://gcc.gnu.org/r205034>`_.
+
+.. Note to self: working copy: "gcc-git-gimple-classes"
