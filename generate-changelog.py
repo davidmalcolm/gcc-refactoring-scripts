@@ -15,15 +15,17 @@ that you can e.g. fix up scopes.
 import fileinput
 import re
 import sys
+import argparse
 
 from refactor import ChangeLogLayout
 
 class Parser:
-    def __init__(self):
+    def __init__(self, omit_hunks):
         self.cll = ChangeLogLayout('.')
         self.within_preamble = True
         self.initial_hunk = False
         self.current_dir = ''
+        self.omit_hunks = omit_hunks
 
     def on_line(self, line):
         if self.within_preamble:
@@ -94,9 +96,22 @@ class Parser:
         # distinguish them from the metadata).
         # We can then use this to identify and describe the underlying
         # changes (and perhaps fix erroneous scope metadata)
-        print('%s%s' % (' ' * 16, line.rstrip()))
+        if not self.omit_hunks:
+            print('%s%s' % (' ' * 16, line.rstrip()))
 
 
-p = Parser()
-for line in fileinput.input():
-    p.on_line(line)
+def main():
+    argp = argparse.ArgumentParser(description='Auto-generate ChangeLog entries')
+    argp.add_argument('--no-hunks', help='omit hunk from output',
+                      action='store_true', default=False, dest='omit_hunks')
+    argp.add_argument('files', action='append', nargs='*')
+
+    parsed_args = argp.parse_args()
+    sys.argv = parsed_args.files
+
+    p = Parser(parsed_args.omit_hunks)
+    for line in fileinput.input():
+        p.on_line(line)
+
+if __name__ == "__main__":
+    main()
