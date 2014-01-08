@@ -26,6 +26,7 @@ class Parser:
         self.initial_hunk = False
         self.current_dir = ''
         self.omit_hunks = omit_hunks
+        self.previous_scope = None
 
     def on_line(self, line):
         if self.within_preamble:
@@ -70,6 +71,7 @@ class Parser:
             rel_path = self.cll.get_path_relative_to_changelog(cll_path)
             sys.stdout.write('\t* %s ' % rel_path)
             self.initial_hunk = True
+            self.previous_scope = None
             return
 
         # '@@ -1936,7 +1936,7 @@ transform_statements (void)\n'
@@ -89,7 +91,9 @@ class Parser:
                 self.initial_hunk = False
             else:
                 indent = '\t'
-            print('%s(%s): Likewise.' % (indent, scope))
+            if not self.omit_hunks or scope != self.previous_scope:
+                print('%s(%s): Likewise.' % (indent, scope))
+                self.previous_scope = scope
             return
 
         # Print the remaining lines, massively indented (to easily
