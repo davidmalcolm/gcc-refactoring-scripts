@@ -79,13 +79,18 @@ class Parser:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
-            scope = m.group(2).split(' ')
-            if scope[0] == 'struct':
-                # e.g. "struct foo"
-                scope = ' '.join(scope)
+            if m is None:
+                # A hunk near the start of the file may not have any
+                # function name at all.
+                scope = ''
             else:
-                # Assume a function decl with args; use just the name:
-                scope = scope[0]
+                scope = m.group(2).split(' ')
+                if scope[0] == 'struct':
+                    # e.g. "struct foo"
+                    scope = ' '.join(scope)
+                else:
+                    # Assume a function decl with args; use just the name:
+                    scope = scope[0]
             if self.initial_hunk:
                 indent = ''
                 self.initial_hunk = False
