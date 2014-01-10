@@ -113,10 +113,10 @@ def main():
     argp = argparse.ArgumentParser(description='Auto-generate ChangeLog entries')
     argp.add_argument('--no-hunks', help='omit hunk from output',
                       action='store_true', default=False, dest='omit_hunks')
-    argp.add_argument('files', action='append', nargs='*')
+    argp.add_argument('files', nargs='*')
 
     parsed_args = argp.parse_args()
-    sys.argv = parsed_args.files
+    sys.argv[1:] = parsed_args.files
 
     p = Parser(parsed_args.omit_hunks)
     for line in fileinput.input():
