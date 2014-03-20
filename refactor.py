@@ -237,6 +237,12 @@ class Source:
         return result
 
     def within_comment_at(self, idx):
+        # Detect C++-style comments:
+        line = self.get_line_at(idx)
+        if '//' in line:
+            return True
+
+        # Detect C-style comments:
         src = self._str[:idx]
         final_open_comment = src.rfind('/*')
         if final_open_comment == -1:

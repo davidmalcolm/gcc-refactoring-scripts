@@ -108,5 +108,48 @@ class IntegrationTests(unittest.TestCase):
         src = ('int flag_dump_unnumbered = 0;\n')
         self.assertUnchanged(src, 'print-rtl.h')
 
+    def test_optimize(self):
+        # Ensure that "optimize" gets wrapped
+        src = (
+            'static bool\n'
+            'gate_dse1 (void)\n'
+            '{\n'
+            '  return optimize > 0 && flag_dse\n'
+            '    && dbg_cnt (dse1);\n'
+            '}\n'
+            '\n'
+            'static bool\n'
+            'gate_dse2 (void)\n'
+            '{\n'
+            '  return optimize > 0 && flag_dse\n'
+            '    && dbg_cnt (dse2);\n'
+            '}\n')
+        expected_code = (
+            'static bool\n'
+            'gate_dse1 (void)\n'
+            '{\n'
+            '  return GCC_OPTION (optimize) > 0 && GCC_OPTION (flag_dse)\n'
+            '    && dbg_cnt (dse1);\n'
+            '}\n'
+            '\n'
+            'static bool\n'
+            'gate_dse2 (void)\n'
+            '{\n'
+            '  return GCC_OPTION (optimize) > 0 && GCC_OPTION (flag_dse)\n'
+            '    && dbg_cnt (dse2);\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* dse.c (gate_dse1): Wrap option usage in GCC_OPTION macro.\n'
+             '\t(gate_dse2): Likewise.\n')
+        self.assertRefactoringEquals(src, 'dse.c',
+                                     expected_code, expected_changelog)
+
+    def test_cpp_comment(self):
+        src = (
+            '  // The next optimize flag.  These are not in any order.\n'
+            '  Go_optimize* next_;\n')
+        self.assertUnchanged(src, 'go/gofrontend/go-optimize.h')
+
+
 if __name__ == '__main__':
     unittest.main()

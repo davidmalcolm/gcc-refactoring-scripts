@@ -58,30 +58,40 @@ class Option(
         report = False
         var = None
         init = None
-        properties = lines[1].split()
-        for prop in properties:
-            if prop in ('Common', 'Target'):
-                if availability != None:
-                    raise ValueError(lines)
-                availability = prop
-            elif prop in ('Warning', 'Optimization'):
-                if kind != None:
-                    raise ValueError(lines)
-                kind = prop
-            elif prop == 'Driver':
-                driver = True
-            elif prop == 'Report':
-                report = True
-            elif prop.startswith('Alias('):
-                alias = Option.parse_prop_arg(prop)
-            elif prop.startswith('Var('):
-                var = Option.parse_prop_arg(prop)
-            elif prop.startswith('Init('):
-                init = Option.parse_prop_arg(prop)
-            else:
-                pass
-                #print(prop)
-        return Option(name=lines[0],
+        #print('lines: %r' % lines)
+        if len(lines) > 1:
+            properties = lines[1].split()
+            for prop in properties:
+                if prop in ('Common', 'Target'):
+                    if not availability:
+                        availability = prop
+                    else:
+                        # Duplicate availability; ignore
+                        pass
+                elif prop in ('Warning', 'Optimization'):
+                    if kind != None:
+                        raise ValueError(lines)
+                    kind = prop
+                elif prop == 'Driver':
+                    driver = True
+                elif prop == 'Report':
+                    report = True
+                elif prop.startswith('Alias('):
+                    alias = Option.parse_prop_arg(prop)
+                elif prop.startswith('Var('):
+                    var = Option.parse_prop_arg(prop)
+                elif prop.startswith('Init('):
+                    init = Option.parse_prop_arg(prop)
+                else:
+                    pass
+                    #print(prop)
+        name = lines[0]
+        if name.startswith('-'):
+            name = name[1:]
+        if name.endswith('='):
+            # FIXME: many of these are duplicates, but not all
+            name = name[:-1]
+        return Option(name=name,
                       availability=availability,
                       kind=kind,
                       driver=driver,
@@ -153,12 +163,36 @@ def parse_opt_file(path):
             pending.append(line)
     return records
 
+def parse_all_opt_files(path):
+    records = []
+    for optpath in find_opt_files(path):
+        records += parse_opt_file(optpath)
+    return records
+
 class Options:
     def __init__(self):
-        self.records = parse_opt_file('../src/gcc/common.opt')
-        self.optvarnames = [opt.var
-                            for opt in self.records
-                            if isinstance(opt, Option)]
+        # There are currently 111 option files:
+        #   find . -name "*.opt"|wc -l
+        #   111
+        self.records = parse_all_opt_files('../src/gcc')
+        #from pprint import pprint
+        #pprint(self.records)
+
+        # Get names of Option and Variable instances
+        self.opt_varnames = set([opt.var
+                                 for opt in self.records
+                                 if isinstance(opt, Option)])
+        self.var_names = set([var.name
+                              for var in self.records
+                              if isinstance(var, Variable)])
+        if 0:
+            pprint(self.opt_varnames)
+            pprint(self.var_names)
+
+        # ...and combine them:
+        # e.g. optimize is a Variable (within common.opt)
+        self.varnames = self.opt_varnames.union(self.var_names)
+
         # Construct regular expressions for matching the varnames.
         # Must not be preceded by "( ", so that we don't repeatedly
         # apply the transformation
@@ -167,34 +201,42 @@ class Options:
         # initial suffix.
         self.patterns = [re.compile(r'[^\(] (%s)[^_a-zA-Z0-9]' % varname,
                                     re.MULTILINE | re.DOTALL)
-                         for varname in self.optvarnames]
-        print(len(self.patterns))
+                         for varname in self.varnames]
+        #print(len(self.patterns))
 
     def make_macros_visible(self,clog_filename, src):
         changelog = Changelog(clog_filename)
         scopes = OrderedDict()
-        while 1:
+        count = 0
+        changes = 0
+        for pattern in self.patterns:
             match = 0
-            for pattern in self.patterns:
-                m = src.search(pattern)
-                if m:
-                    # Avoid changing variable definitions in print-rtl.c that
-                    # are guarded by #ifdef GENERATOR_FILE:
-                    line = src.get_line_at(m.start(1))
-                    if line.startswith('int') and line.endswith(' = 0;'):
-                        continue
-                    scope = src.get_change_scope_at(m.start())
-                    replacement = 'GCC_OPTION (%s)' % m.group(1)
-                    src = src.replace(m.start(1), m.end(1), replacement)
-                    if scope not in scopes:
-                        scopes[scope] = scope
-                    match = 1
+            count += 1
+            if count % 100 == 0:
+                print('count: %i' % count)
+            for m in src.finditer(pattern):
+                # Avoid changing variable definitions in print-rtl.c that
+                # are guarded by #ifdef GENERATOR_FILE:
+                line = src.get_line_at(m.start(1))
+                if line.startswith('int'):
+                    continue
 
-            # no matches:
-            if not match:
-                break
+                # Don't change things within comments.  In particular, this
+                # avoids lots of rewriting of the word "optimize" to
+                # "GCC_OPTION (optimize)".
+                if src.within_comment_at(m.start(1)):
+                    continue
 
-        for scope in scopes:
+                scope = src.get_change_scope_at(m.start())
+                replacement = 'GCC_OPTION (%s)' % m.group(1)
+                src = src.replace(m.start(1), m.end(1), replacement)
+                if scope not in scopes:
+                    scopes[scope] = scope
+                match = 1
+                changes += 1
+                print('changes: %i' % changes)
+
+        for scope in scopes.keys()[::-1]:
             changelog.append(scope,
                              'Wrap option usage in GCC_OPTION macro.')
 
