@@ -505,13 +505,13 @@ def main(script, refactoring, argv, skip_testsuite=False):
             if skip_testsuite:
                 if 'testsuite' in names:
                     names.remove('testsuite')
-                    for name in sorted(names):
-                        path = os.path.join(dirname, name)
-                        if os.path.isfile(path) \
-                           and (path.endswith('.c') or
-                                path.endswith('.h')):
-                            print(path)
-                            paths.append(path)
+            for name in sorted(names):
+                path = os.path.join(dirname, name)
+                if os.path.isfile(path) \
+                   and (path.endswith('.c') or
+                        path.endswith('.h')):
+                    print(path)
+                    paths.append(path)
         os.path.walk('../src/gcc', visit, None)
 
     # Generate metadata for the set of changes
