@@ -2,7 +2,7 @@ import unittest
 
 from refactor import wrap, Source
 from refactor_options import Options, parse_record, \
-    Variable, Option
+    Variable, Option, find_opt_files
 
 def make_expected_changelog(filename, scope, text):
     return wrap('\t* %s (%s): %s' % (filename, scope, text))
@@ -35,6 +35,12 @@ class VariableTests(TestParsingTests):
                                      'debug_struct_generic'))
 
 class OptionTests(TestParsingTests):
+    def test_find_opt_files(self):
+        paths = find_opt_files('../src/gcc')
+        self.assertIn('../src/gcc/common.opt', paths)
+        self.assertIn('../src/gcc/c-family/c.opt', paths)
+        self.assertIn('../src/gcc/config/microblaze/microblaze.opt', paths)
+
     def test_simple(self):
         self.assertParsesAs(
             ['ftree-vrp',

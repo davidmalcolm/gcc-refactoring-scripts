@@ -1,4 +1,5 @@
 from collections import namedtuple, OrderedDict
+import os
 import re
 import sys
 
@@ -106,6 +107,22 @@ def parse_record(lines):
         return None
     else:
         return Option.from_lines(lines)
+
+def find_opt_files(path):
+    """
+    Yield a sequence of paths to .opt files
+    """
+    result = []
+    def visit(arg, dirname, names):
+        # Skip testsuite:
+        if 'testsuite' in names:
+            names.remove('testsuite')
+        for name in sorted(names):
+            newpath = os.path.join(dirname, name)
+            if os.path.isfile(newpath) and newpath.endswith('.opt'):
+                result.append(newpath)
+    os.path.walk(path, visit, None)
+    return result
 
 def parse_opt_file(path):
     """
