@@ -95,6 +95,15 @@ class IntegrationTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'tree-vrp.c',
                                      expected_code, expected_changelog)
 
+    def test_idempotency(self):
+        src = (
+            'static\n'
+            'gate_vrp (void)\n'
+            '{\n'
+            '  return GCC_OPTION (flag_tree_vrp) != 0;\n'
+            '}\n')
+        self.assertUnchanged(src, 'tree-vrp.c')
+
     def test_trailing(self):
         src = (
             '   /* True if pedwarns are errors.  */\n'
@@ -149,6 +158,25 @@ class IntegrationTests(unittest.TestCase):
             '  // The next optimize flag.  These are not in any order.\n'
             '  Go_optimize* next_;\n')
         self.assertUnchanged(src, 'go/gofrontend/go-optimize.h')
+
+    def test_multiple_options(self):
+        src = (
+            'gate_handle_reorder_blocks (void)\n' # excerpt
+            '{\n'
+            '  return (optimize > 0\n'
+            '          && (flag_reorder_blocks || flag_reorder_blocks_and_partition));\n'
+            '}\n')
+        expected_code = (
+            'gate_handle_reorder_blocks (void)\n'
+            '{\n'
+            '  return (GCC_OPTION (optimize) > 0\n'
+            '          && (GCC_OPTION (flag_reorder_blocks) || GCC_OPTION (flag_reorder_blocks_and_partition)));\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* bb-reorder.c (gate_handle_reorder_blocks): Wrap option usage in\n'
+             '\tGCC_OPTION macro.\n')
+        self.assertRefactoringEquals(src, 'bb-reorder.c',
+                                     expected_code, expected_changelog)
 
 
 if __name__ == '__main__':

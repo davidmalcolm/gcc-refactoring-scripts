@@ -194,12 +194,11 @@ class Options:
         self.varnames = self.opt_varnames.union(self.var_names)
 
         # Construct regular expressions for matching the varnames.
-        # Must not be preceded by "( ", so that we don't repeatedly
-        # apply the transformation
-        # Must not be followed by a valid identifier character, so
+        # Must not be preceded or followed by valid identifier characters, so
         # that we don't match other variables which have a matching
-        # initial suffix.
-        self.patterns = [re.compile(r'[^\(] (%s)[^_a-zA-Z0-9]' % varname,
+        # prefix or suffix.
+        self.patterns = [re.compile((r'[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]'
+                                     % varname),
                                     re.MULTILINE | re.DOTALL)
                          for varname in self.varnames]
         #print(len(self.patterns))
@@ -215,6 +214,11 @@ class Options:
             if count % 100 == 0:
                 print('count: %i' % count)
             for m in src.finditer(pattern):
+                # Don't handle code that's already been touched:
+                MACRO = 'GCC_OPTION ('
+                if src._str[m.start(1) - len(MACRO):m.start(1)] == MACRO:
+                    continue
+
                 # Avoid changing variable definitions in print-rtl.c that
                 # are guarded by #ifdef GENERATOR_FILE:
                 line = src.get_line_at(m.start(1))
