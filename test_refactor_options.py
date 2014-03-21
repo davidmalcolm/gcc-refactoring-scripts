@@ -231,6 +231,17 @@ class IntegrationTests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'bb-reorder.c',
                                      expected_code, expected_changelog)
 
+    def test_opt_for_fn(self):
+        src = (
+            'static void\n'
+            'determine_versionability (struct cgraph_node *node)\n'
+            '{\n'
+            # (excerpt)
+            '  else if (!opt_for_fn (node->decl, optimize)\n'
+            '\t   || !opt_for_fn (node->decl, flag_ipa_cp))\n'
+            '    reason = "non-optimized function";\n')
+        self.assertUnchanged(src, 'ipa-cp.c')
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -274,6 +274,13 @@ class Options:
                 if line.startswith('int'):
                     continue
 
+                # opt_for_fn(fndecl, opt) is its own macro, which potentially
+                # looks up option "opt" in a function-specific location.
+                # Don't touch such macros (currently all uses are the only
+                # thing on their line):
+                if 'opt_for_fn' in line:
+                    continue
+
                 # Don't change things within comments.  In particular, this
                 # avoids lots of rewriting of the word "optimize" to
                 # "GCC_OPTION (optimize)".
