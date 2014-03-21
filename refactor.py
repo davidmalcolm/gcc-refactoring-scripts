@@ -545,7 +545,19 @@ global_cs = None
 def do_one_path(path):
     return global_cs.do_one_path(path)
 
-def main(script, refactoring, argv, skip_testsuite=False):
+def c_and_h_files(path):
+    return (os.path.isfile(path)
+            and (path.endswith('.c') or
+                 path.endswith('.h')))
+
+def c_h_and_def_files(path):
+    return (os.path.isfile(path)
+            and (path.endswith('.c') or
+                 path.endswith('.h') or
+                 path.endswith('.def')))
+
+def main(script, refactoring, argv, skip_testsuite=False,
+         path_filter=c_and_h_files):
     # Gather list of paths of files to be refactored
     if len(argv) > 1:
         # Use paths specified at the command line
@@ -560,9 +572,7 @@ def main(script, refactoring, argv, skip_testsuite=False):
                     names.remove('testsuite')
             for name in sorted(names):
                 path = os.path.join(dirname, name)
-                if os.path.isfile(path) \
-                   and (path.endswith('.c') or
-                        path.endswith('.h')):
+                if path_filter(path):
                     print(path)
                     paths.append(path)
         os.path.walk('../src/gcc', visit, None)

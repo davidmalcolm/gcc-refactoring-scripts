@@ -3,7 +3,7 @@ import os
 import re
 import sys
 
-from refactor import main, Changelog
+from refactor import main, Changelog, c_h_and_def_files
 
 class Variable(namedtuple('Variable', ('type_', 'name'))):
     pass
@@ -276,4 +276,5 @@ class Options:
 if __name__ == '__main__':
     options = Options()
     main('refactor_options.py', options.make_macros_visible, sys.argv,
-         skip_testsuite=True)
+         skip_testsuite=True,
+         path_filter=c_h_and_def_files)
