@@ -34,6 +34,18 @@ class VariableTests(TestParsingTests):
                             Variable('enum debug_struct_file',
                                      'debug_struct_generic'))
 
+    def test_ix86_isa_flags(self):
+        self.assertParsesAs(['Variable',
+                             'HOST_WIDE_INT ix86_isa_flags = TARGET_64BIT_DEFAULT | TARGET_SUBTARGET_ISA_DEFAULT'],
+                            Variable('HOST_WIDE_INT',
+                                     'ix86_isa_flags'))
+
+    def test_target_variable(self):
+        self.assertParsesAs(['TargetVariable',
+                             'int recip_mask = RECIP_MASK_DEFAULT'],
+                            Variable('int',
+                                     'recip_mask'))
+
 class OptionTests(TestParsingTests):
     def test_find_opt_files(self):
         paths = find_opt_files('../src/gcc')

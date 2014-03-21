@@ -139,6 +139,9 @@ def parse_record(lines):
     if lines[0] == 'Variable':
         assert len(lines) == 2
         return __parse_variable(lines[1])
+    if lines[0] == 'TargetVariable':
+        assert len(lines) == 2
+        return __parse_variable(lines[1])
     elif lines == ['###', 'Driver']:
         # not sure what's up with this one
         return None
