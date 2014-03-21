@@ -224,9 +224,10 @@ class Options:
         # Must not be preceded or followed by valid identifier characters, so
         # that we don't match other variables which have a matching
         # prefix or suffix.
-        self.patterns = [re.compile((r'[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]'
-                                     % varname),
-                                    re.MULTILINE | re.DOTALL)
+        self.patterns = [(varname,
+                          re.compile((r'[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]'
+                                      % varname),
+                                     re.MULTILINE | re.DOTALL))
                          for varname in self.varnames]
         #print(len(self.patterns))
 
@@ -235,11 +236,29 @@ class Options:
         scopes = OrderedDict()
         count = 0
         changes = 0
-        for pattern in self.patterns:
+        for varname, pattern in self.patterns:
             match = 0
             count += 1
             if count % 100 == 0:
                 print('count: %i' % count)
+
+            if varname == 'TARGET_ACCUMULATE_OUTGOING_ARGS':
+                # Nasty special-case: we're handling Vars from all .opt
+                # files, and sh.opt has a
+                #   Var(TARGET_ACCUMULATE_OUTGOING_ARGS)
+                # and uses of this option in sh.c and sh.h, which must
+                # become GCC_OPTION (TARGET_ACCUMULATE_OUTGOING_ARGS)
+                # whereas i386.opt has a:
+                #   Mask(ACCUMULATE_OUTGOING_ARGS)
+                # leading to there being a TARGET_ACCUMULATE_OUTGOING_ARGS
+                # macro within options.h on i386 builds defined in terms
+                # of masking GCC_OPTION (target_flags).
+                #
+                # Hence only process this as a Var within the sh config
+                # subdir:
+                if 'config/sh/' not in clog_filename:
+                    continue
+
             for m in src.finditer(pattern):
                 # Don't handle code that's already been touched:
                 MACRO = 'GCC_OPTION ('
