@@ -60,7 +60,7 @@ class Option(
         init = None
         #print('lines: %r' % lines)
         if len(lines) > 1:
-            properties = lines[1].split()
+            properties = Option.split_into_properties(lines[1])
             for prop in properties:
                 if prop in ('Common', 'Target'):
                     if not availability:
@@ -103,6 +103,29 @@ class Option(
                       var=var,
                       init=init,
                       helptext='\n'.join(lines[2:]))
+
+    @staticmethod
+    def split_into_properties(line):
+        # Naive parser: split by whitespace
+        items = line.split()
+
+        # Now recombine parenthesized regions, to handle spaces within
+        # parentheses
+        # Reverse  so that we can use "pop" to pop from the front:
+        items = items[::-1]
+
+        result = []
+        while items:
+            item = items.pop()
+            if '(' in item and ')' not in item:
+                while items:
+                    nextitem = items.pop()
+                    item += ' ' + nextitem
+                    if ')' in item:
+                        break
+            result.append(item)
+
+        return result
 
     @staticmethod
     def parse_prop_arg(prop):

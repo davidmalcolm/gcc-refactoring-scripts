@@ -40,6 +40,20 @@ class OptionTests(TestParsingTests):
         self.assertIn('../src/gcc/common.opt', paths)
         self.assertIn('../src/gcc/c-family/c.opt', paths)
         self.assertIn('../src/gcc/config/microblaze/microblaze.opt', paths)
+        self.assertIn('../src/gcc/config/i386/i386.opt', paths)
+
+    def test_split_into_properties(self):
+        for line, expected_props in [
+                ('Common Report Var(flag_tree_builtin_call_dce) Init(0) Optimization',
+                 ['Common', 'Report', 'Var(flag_tree_builtin_call_dce)',
+                  'Init(0)', 'Optimization']),
+                ('C ObjC C++ ObjC++ Var(flag_no_builtin, 0)',
+                 ['C', 'ObjC', 'C++', 'ObjC++', 'Var(flag_no_builtin, 0)']),
+                ('Name(tls_model) Type(enum tls_model) UnknownError(unknown TLS model %qs)',
+                 ['Name(tls_model)', 'Type(enum tls_model)', 'UnknownError(unknown TLS model %qs)'])
+        ]:
+            self.assertEqual(Option.split_into_properties(line),
+                             expected_props)
 
     def test_simple(self):
         self.assertParsesAs(
@@ -68,6 +82,12 @@ class OptionTests(TestParsingTests):
                    var='flag_no_common',
                    init=None,
                    helptext='Do not put uninitialized globals in the common section'))
+
+    def test_flag_no_builtin(self):
+        opt = parse_record(['fbuiltin',
+                            'C ObjC C++ ObjC++ Var(flag_no_builtin, 0)'
+                            'Recognize built-in functions'])
+        self.assertEqual(opt.var, 'flag_no_builtin')
 
 options = Options()
 
