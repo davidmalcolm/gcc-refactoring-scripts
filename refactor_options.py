@@ -80,6 +80,10 @@ class Option(
                     alias = Option.parse_prop_arg(prop)
                 elif prop.startswith('Var('):
                     var = Option.parse_prop_arg(prop)
+                    # Handle the 2-arg variant of Var() by taking
+                    # the first arg:
+                    if var and ',' in var:
+                        var = var.split(',')[0].strip()
                 elif prop.startswith('Init('):
                     init = Option.parse_prop_arg(prop)
                 else:

@@ -55,6 +55,20 @@ class OptionTests(TestParsingTests):
                    init='0',
                    helptext='Perform Value Range Propagation on trees'))
 
+    def test_var_with_two_args(self):
+        self.assertParsesAs(
+            ['fcommon',
+             'Common Report Var(flag_no_common,0) Optimization',
+             'Do not put uninitialized globals in the common section'],
+            Option(name='fcommon',
+                   availability='Common',
+                   kind='Optimization',
+                   driver=False,
+                   report=True,
+                   var='flag_no_common',
+                   init=None,
+                   helptext='Do not put uninitialized globals in the common section'))
+
 options = Options()
 
 class IntegrationTests(unittest.TestCase):
