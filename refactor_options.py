@@ -292,8 +292,20 @@ class Options:
 
         return src.str(), changelog
 
+def path_filter(path):
+    if not c_h_and_def_files(path):
+        return False
+
+    # target.def has various words e.g. "optimize" in comments that
+    # shouldn't be wrapped, along with some wrapped in @code{} that
+    # probably should, but none that need wrapping.  Skip this file.
+    if path.endswith('/target.def'):
+        return False
+
+    return True
+
 if __name__ == '__main__':
     options = Options()
     main('refactor_options.py', options.make_macros_visible, sys.argv,
          skip_testsuite=True,
-         path_filter=c_h_and_def_files)
+         path_filter=path_filter)
