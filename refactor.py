@@ -242,6 +242,10 @@ class Source:
         if '//' in line:
             return True
 
+        # Detect .md comments:
+        if line.startswith(';'):
+            return True
+
         # Detect C-style comments:
         src = self._str[:idx]
         final_open_comment = src.rfind('/*')
@@ -549,12 +553,6 @@ def c_and_h_files(path):
     return (os.path.isfile(path)
             and (path.endswith('.c') or
                  path.endswith('.h')))
-
-def c_h_and_def_files(path):
-    return (os.path.isfile(path)
-            and (path.endswith('.c') or
-                 path.endswith('.h') or
-                 path.endswith('.def')))
 
 def main(script, refactoring, argv, skip_testsuite=False,
          path_filter=c_and_h_files):

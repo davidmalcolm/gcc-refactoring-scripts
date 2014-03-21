@@ -3,7 +3,7 @@ import os
 import re
 import sys
 
-from refactor import main, Changelog, c_h_and_def_files
+from refactor import main, Changelog
 
 class Variable(namedtuple('Variable', ('type_', 'name'))):
     pass
@@ -293,7 +293,13 @@ class Options:
         return src.str(), changelog
 
 def path_filter(path):
-    if not c_h_and_def_files(path):
+    if not os.path.isfile(path):
+        return False
+
+    if not (path.endswith('.c') or
+            path.endswith('.h') or
+            path.endswith('.def') or
+            path.endswith('.md')):
         return False
 
     # target.def has various words e.g. "optimize" in comments that

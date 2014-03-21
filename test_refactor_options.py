@@ -193,6 +193,13 @@ class IntegrationTests(unittest.TestCase):
             '  Go_optimize* next_;\n')
         self.assertUnchanged(src, 'go/gofrontend/go-optimize.h')
 
+    def test_md_comment(self):
+        # Don't touch the "optimize" within machine description comments
+        src = (
+            '; GAS relies on the order and position of instructions output below in order\n'
+            '; to generate relocs for VMS link to potentially optimize the call.\n')
+        self.assertUnchanged(src, 'config/alpha/alpha.md')
+
     def test_multiple_options(self):
         src = (
             'gate_handle_reorder_blocks (void)\n' # excerpt
