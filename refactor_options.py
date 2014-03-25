@@ -287,6 +287,13 @@ class Options:
                 if src.within_comment_at(m.start(1)):
                     continue
 
+                # Don't change things within string literals e.g. within
+                # spec strings in gcc.c.   It's OK within .md files, since
+                # the C fragments in those files occur within strings.
+                if src.within_string_literal_at(m.start(1)) \
+                   and not clog_filename.endswith('.md'):
+                    continue
+
                 scope = src.get_change_scope_at(m.start())
                 replacement = 'GCC_OPTION (%s)' % m.group(1)
                 src = src.replace(m.start(1), m.end(1), replacement)

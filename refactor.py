@@ -256,8 +256,22 @@ class Source:
 
     def within_string_literal_at(self, idx):
         # Have we seen an odd number of quotes?
-        # This doesn't handle escaped quotes, and quotes within comments
-        return self._str[:idx].count('"') % 2
+        within_quotes = False
+        for m in re.finditer('"', self._str[:idx]):
+            if m.start():
+                # Don't count within comments:
+                if self.within_comment_at(m.start()):
+                    continue
+
+                # Don't count escaped quotes or quotes
+                # within character literals:
+                prevchar = self._str[m.start() - 1]
+                if prevchar == '\\' \
+                   or (prevchar == "'" and not within_quotes):
+                    continue
+
+            within_quotes = not within_quotes
+        return within_quotes
 
     FUNC_PATTERN = ('^' + named_identifier_group('FUNCNAME')
                     + r' \((?P<PARAMS>.*?)\)')

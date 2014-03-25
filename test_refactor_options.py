@@ -242,6 +242,36 @@ class IntegrationTests(unittest.TestCase):
             '    reason = "non-optimized function";\n')
         self.assertUnchanged(src, 'ipa-cp.c')
 
+    def test_escaped_quote(self):
+        # Ensure that Source.within_string_literal_at can cope with escaped
+        # quotes
+        s = Source('foo \\"bar')
+        self.assert_(not s.within_string_literal_at(9))
+
+    def test_literal_quote(self):
+        s = Source("'\"' foo")
+        self.assert_(not s.within_string_literal_at(5))
+
+        s = Source('foo "*w\'" bar')
+        self.assert_(not s.within_string_literal_at(12))
+
+        s = Source('Look for range tests like "'
+                   + "ch >= '0' && ch <= '9'"
+                   +'".')
+        self.assert_(not s.within_string_literal_at(1000))
+
+    def test_quote_within_comment(self):
+        s = Source('/*"*/ foo ')
+        self.assert_(not s.within_string_literal_at(20))
+
+    def test_spec_strings(self):
+        # Must not touch the "pedantic" in the following:
+        src = (
+            'static const char *cpp_options =\n'
+            '"%(cpp_unique_options) %1 %{m*} %{std*&ansi&trigraphs} %{W*&pedantic*} %{w}\\n'
+            ' %{f*} %{g*:%{!g0:%{g*} %{!fno-working-directory:-fworking-directory}}} %{O*}\\n'
+            ' %{undef} %{save-temps*:-fpch-preprocess}";\n')
+        self.assertUnchanged(src, 'gcc.c')
 
 if __name__ == '__main__':
     unittest.main()
