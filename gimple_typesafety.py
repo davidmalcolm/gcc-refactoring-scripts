@@ -77,12 +77,18 @@ def print_title(text):
     print(text)
     print('-' * len(text))
 
+SHOW_FULL = 1
+
 def report(gas, title, pred):
     subset = filter(pred, gas)
-    print_title('%s: %s' % (title, len(subset)))
-    for ga in subset:
-        print('  %s' % ga.line)
-    print
+    if SHOW_FULL:
+        print_title('%s: %s' % (title, len(subset)))
+        for ga in subset:
+            print('  %s' % ga.line)
+        print
+    else:
+        # just a summary
+        print('%s: %s' % (title, len(subset)))
 
 gas = sorted(set(list(GimpleAccessor.get_all())),
              lambda ga1, ga2: cmp(ga1.symbol, ga2.symbol))
@@ -175,3 +181,7 @@ report(gas,
        lambda ga: ((ga.paramtypes[0].startswith('gimple_')
                     or ga.paramtypes[0].startswith('const_gimple_'))
                    and ga.is_accessor()))
+
+report(gas,
+       'NOTE: Accessors known not to need to be converted',
+       lambda ga: ga.symbol in NOT_TO_BE_CONVERTED)
