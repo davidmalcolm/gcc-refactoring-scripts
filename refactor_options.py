@@ -314,6 +314,7 @@ def path_filter(path):
         return False
 
     if not (path.endswith('.c') or
+            path.endswith('.cc') or
             path.endswith('.h') or
             path.endswith('.def') or
             path.endswith('.md')):
