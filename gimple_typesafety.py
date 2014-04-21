@@ -1,6 +1,10 @@
-from collections import namedtuple
+from collections import namedtuple, Counter
 import os.path
+from pprint import pprint
 import re
+import sys
+
+from refactor_gimple import GimpleTypes
 
 SRCDIR = '../src/gcc'
 def get_gimple_h():
@@ -65,6 +69,20 @@ class GimpleAccessor(namedtuple('GimpleAccessor',
                          or self.symbol.startswith('gimple_build_')
                          or self.symbol.startswith('gimple_alloc_')))
 
+    def get_prefix(self, accessor_prefixes):
+        for prefix in accessor_prefixes:
+            if ga.symbol.startswith(prefix):
+                return prefix
+        if ga.symbol.startswith('gimple_omp_'):
+            return 'gimple_omp_'
+        raise ValueError()
+
+    def get_constless_first_param(self):
+        paramtype = self.paramtypes[0]
+        if paramtype.startswith('const_'):
+            paramtype = paramtype[len('const_'):]
+        return paramtype
+
     def __hash__(self):
         return hash(self.symbol)
 
@@ -78,7 +96,10 @@ def print_title(text):
     print(text)
     print('-' * len(text))
 
-SHOW_FULL = 1
+def println():
+    sys.stdout.write('\n')
+
+SHOW_FULL = 0
 
 def report(gas, title, pred):
     subset = filter(pred, gas)
@@ -90,6 +111,7 @@ def report(gas, title, pred):
     else:
         # just a summary
         print('%s: %s' % (title, len(subset)))
+    return subset
 
 gas = sorted(set(list(GimpleAccessor.get_all())),
              lambda ga1, ga2: cmp(ga1.symbol, ga2.symbol))
@@ -154,6 +176,7 @@ NOT_TO_BE_CONVERTED = set(['gimple_assign_cast_p',
                            'gimple_set_visited',
                            'gimple_set_vuse',
                            'gimple_statement_structure',
+                           'gimple_stmt_max_uid',
                            'gimple_store_p',
                            'gimple_uid',
                            'gimple_use_ops',
@@ -186,3 +209,52 @@ report(gas,
 report(gas,
        'NOTE: Accessors known not to need to be converted',
        lambda ga: ga.symbol in NOT_TO_BE_CONVERTED)
+
+println()
+
+gt = GimpleTypes()
+gimple_type_names = gt.get_gimple_type_names()
+#pprint(sorted(gimple_type_names))
+
+accessor_prefixes = gt.get_accessor_prefixes()
+
+accessors = {}
+for ga in gas:
+    if ga.is_accessor() and ga.symbol not in NOT_TO_BE_CONVERTED:
+        prefixtype = ga.get_prefix(accessor_prefixes)
+        if prefixtype in accessors:
+            accessors[prefixtype].add(ga)
+        else:
+            accessors[prefixtype] = set([ga])
+#pprint(accessors)
+
+stats = Counter()
+for prefixtype in sorted(accessors.keys()):
+    if prefixtype is None:
+        prefixtype = 'gimple_omp_'
+    prefix_accessors = sorted(accessors[prefixtype])
+    done = len([ga for ga in prefix_accessors
+                if ga.get_constless_first_param() == prefixtype[:-1]])
+    todo = len([ga for ga in prefix_accessors
+                if ga.get_constless_first_param() == 'gimple'])
+    percentage = (done * 100) / (done + todo)
+    stats[prefixtype] = (percentage, prefixtype, done, todo)
+
+def print_table(stats):
+    print_title('Accessors "concretized" by prefix')
+    def print_row(percentage, prefixtype, done, todo):
+        print('%3s %30s %5s %5s' % (percentage, prefixtype, done, todo))
+    print_row('%', 'Prefix', 'DONE', 'TODO')
+    for key, value in stats.most_common():
+        percentage, prefixtype, done, todo = value
+        print_row(percentage, prefixtype, done, todo)
+
+print_title('Statement subclasses where all accessors are fully-concrete')
+for key in sorted(stats.keys()):
+    percentage, prefixtype, done, todo = stats[key]
+    if todo == 0:
+        print('%s (%i accessors)' % (prefixtype, done))
+println()
+
+print_table(stats)
+println()

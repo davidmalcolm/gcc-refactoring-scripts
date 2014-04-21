@@ -176,6 +176,17 @@ class GimpleTypes:
                 result.append(gimple_code)
         return result
 
+    def get_gimple_type_names(self):
+        return set([gdef[1] for gdef in self.gimple_defs])
+
+    def get_accessor_prefixes(self):
+        # Note that 'gimple_omp_task' is a prefix of 'gimple_omp_taskgroup'
+        # hence we need to append a prefix when searching.
+        return ['%s_' % (typename
+                         if typename != 'gimple_with_cleanup_expr'
+                         else 'gimple_wce')
+                for typename in self.get_gimple_type_names()]
+
 def eliminate_union_access(code_, gt, subclass, param, instance_name):
     # Replace uses of  "gs->some_union" with just "some_stmt->",
     # for those unions that are within the inheritance chain of the
