@@ -62,7 +62,8 @@ class GimpleAccessor(namedtuple('GimpleAccessor',
     def is_accessor(self):
         return (self.symbol.startswith('gimple_')
                 and not (self.symbol.startswith('gimple_seq')
-                         or self.symbol.startswith('gimple_build_')))
+                         or self.symbol.startswith('gimple_build_')
+                         or self.symbol.startswith('gimple_alloc_')))
 
     def __hash__(self):
         return hash(self.symbol)
