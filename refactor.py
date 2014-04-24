@@ -282,6 +282,8 @@ class Source:
                            + named_identifier_group('METHOD_NAME')
                            + r'\s+\((?P<PARAMS>.*?)\)')
     MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*?\)\s+\\\n'
+    STRUCT_PATTERN = (r'^struct' + ws + named_identifier_group('STRUCTNAME')
+                      + opt_ws + '{' + opt_ws + '$')
     FUNC_PARAMS_PATTERN = (ws + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     CLASS_PATTERN = (r'^struct' + ws + named_identifier_group('CLASS')
                      + ws + ':' + ws + 'public' + ws + '$')
@@ -298,6 +300,8 @@ class Source:
             m = re.match(r'.*\s+(GTY\(\(.*\)\)\s)+.*', src)
             if m:
                 src = src[:m.start(1)] + src[m.end(1):]
+                if 0:
+                    print('filtered out GTY, to: %r' % src)
             else:
                 break
 
@@ -317,6 +321,10 @@ class Source:
             pass
         if m:
             return m.groupdict()['MACRO']
+        for m in re.finditer(self.STRUCT_PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return 'struct %s' % m.groupdict()['STRUCTNAME']
         for m in re.finditer(self.FUNC_PARAMS_PATTERN, src, re.MULTILINE | re.DOTALL):
             pass
         if m:

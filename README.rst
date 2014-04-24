@@ -58,6 +58,17 @@ Status: not yet working
 
 .. Note to self: working copy: "gcc-git-options"
 
+`rename_gimple.py` (and `test_rename_gimple.py`)
+************************************************
+Work-in-progress experiment on removing the "gimple"/"const_gimple" typedefs
+in favor of something else (perhaps just "gimple \*"); see :
+
+  http://gcc.gnu.org/ml/gcc-patches/2014-04/msg01562.html
+
+Status: not yet working
+
+.. Note to self: working copy: "gcc-git-is-a-pointerness"
+
 
 Changes blocking on something else
 ----------------------------------

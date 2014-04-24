@@ -7,3 +7,7 @@ all:
 	python test_refactor_passes.py -v
 	python test_refactor_symtab.py -v
 	python test_rename_symtab.py -v
+	python test_rename_gimple.py -v
+
+html:
+	rst2html README.rst > README.html
