@@ -312,7 +312,7 @@ class Options:
                 if clog_filename == 'gcc-interface/misc.c':
                     continue
 
-                scope = src.get_change_scope_at(m.start())
+                scope = src.get_change_scope_at(m.start(), True)
                 replacement = 'GCC_OPTION (%s)' % m.group(1)
                 src = src.replace(m.start(1), m.end(1), replacement)
                 if scope not in scopes:

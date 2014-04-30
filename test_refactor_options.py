@@ -114,14 +114,14 @@ class IntegrationTests(unittest.TestCase):
                                    src, filename,
                                    expected_code):
         actual_code, actual_changelog = \
-            options.make_macros_visible(filename, Source(src))
+            options.make_macros_visible(filename, Source(src, filename))
         self.maxDiff = 32768
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
     def assertRefactoringEquals(self,
                                 src, filename,
                                 expected_code, expected_changelog):
         actual_code, actual_changelog = \
-            options.make_macros_visible(filename, Source(src))
+            options.make_macros_visible(filename, Source(src, filename))
         self.maxDiff = 8192
         self.assertMultiLineEqual(expected_code, actual_code) # 2.7+
         self.assertMultiLineEqual(expected_changelog,
@@ -295,6 +295,74 @@ class IntegrationTests(unittest.TestCase):
         src = ('int flag_short_enums;\n'
                'enum stack_check_type flag_stack_check = NO_STACK_CHECK;\n')
         self.assertUnchanged(src, 'gcc-interface/misc.c')
+
+    def test_md_changelog(self):
+        src = (
+            '\n'
+            '(define_insn "*recipsf2"\n'
+            '  [(set (match_operand:SF 0 "register_operand" "=f")\n'
+            '	(div:SF (match_operand:SF 1 "const_float_1_operand" "")\n'
+            '		(match_operand:SF 2 "register_operand" "f")))]\n'
+            '  "TARGET_HARD_FLOAT_RECIP && flag_unsafe_math_optimizations"\n'
+            '  "recip.s\t%0, %2"\n'
+            '  [(set_attr "type"	"fdiv")\n'
+            '   (set_attr "mode"	"SF")\n'
+            '   (set_attr "length"	"3")])\n')
+        expected_code = (
+            '\n'
+            '(define_insn "*recipsf2"\n'
+            '  [(set (match_operand:SF 0 "register_operand" "=f")\n'
+            '	(div:SF (match_operand:SF 1 "const_float_1_operand" "")\n'
+            '		(match_operand:SF 2 "register_operand" "f")))]\n'
+            '  "TARGET_HARD_FLOAT_RECIP && GCC_OPTION (flag_unsafe_math_optimizations)"\n'
+            '  "recip.s\t%0, %2"\n'
+            '  [(set_attr "type"	"fdiv")\n'
+            '   (set_attr "mode"	"SF")\n'
+            '   (set_attr "length"	"3")])\n')
+        expected_changelog = (
+            '\t* gcc/config/xtensa/xtensa.md (*recipsf2): Wrap option usage in\n'
+            '\tGCC_OPTION macro.\n')
+        self.assertRefactoringEquals(src, 'gcc/config/xtensa/xtensa.md',
+                                     expected_code, expected_changelog)
+
+    def test_md_changelog_if(self):
+        src = (
+            ';; Return 1 if OP is a SYMBOL_REF for which we can make a call via bsr.\n'
+            '(define_predicate "direct_call_operand"\n'
+            '  (match_operand 0 "samegp_function_operand")\n'
+            '{\n'
+            '  /* If profiling is implemented via linker tricks, we can\'t jump\n'
+            '     to the nogp alternate entry point.  Note that crtl->profile\n'
+            '     would not be correct, since that doesn\'t indicate if the target\n'
+            '     function uses profiling.  */\n'
+            '  /* ??? TARGET_PROFILING_NEEDS_GP isn\'t really the right test,\n'
+            '     but is approximately correct for the OSF ABIs.  Don\'t know\n'
+            '     what to do for VMS, NT, or UMK.  */\n'
+            '  if (!TARGET_PROFILING_NEEDS_GP && profile_flag)\n'
+            '    return false;\n')
+        expected_code = (
+            ';; Return 1 if OP is a SYMBOL_REF for which we can make a call via bsr.\n'
+            '(define_predicate "direct_call_operand"\n'
+            '  (match_operand 0 "samegp_function_operand")\n'
+            '{\n'
+            '  /* If profiling is implemented via linker tricks, we can\'t jump\n'
+            '     to the nogp alternate entry point.  Note that crtl->profile\n'
+            '     would not be correct, since that doesn\'t indicate if the target\n'
+            '     function uses profiling.  */\n'
+            '  /* ??? TARGET_PROFILING_NEEDS_GP isn\'t really the right test,\n'
+            '     but is approximately correct for the OSF ABIs.  Don\'t know\n'
+            '     what to do for VMS, NT, or UMK.  */\n'
+            '  if (!TARGET_PROFILING_NEEDS_GP && GCC_OPTION (profile_flag))\n'
+            '    return false;\n')
+        expected_changelog = (
+            '\t* gcc/config/alpha/predicates.md (direct_call_operand): Wrap option\n'
+            '\tusage in GCC_OPTION macro.\n')
+        self.assertRefactoringEquals(src, 'gcc/config/alpha/predicates.md',
+                                     expected_code, expected_changelog)
+
+
+
+
 
 if __name__ == '__main__':
     unittest.main()

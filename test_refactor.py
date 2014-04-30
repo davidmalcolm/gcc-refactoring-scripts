@@ -81,6 +81,16 @@ class GeneralTests(unittest.TestCase):
                          'is_a_helper <cgraph_node>::test')
         """
 
+    def test_get_scope_in_md(self):
+        src = Source('\n'
+                     '(define_insn_reservation "xtensa_memory" 2\n'
+                     '			 (eq_attr "type" "load,fload")\n'
+                     '			 "nothing")\n',
+                     filename='gcc/config/xtensa/xtensa.md')
+
+        self.assertEqual(src.get_change_scope_at(100),
+                         'xtensa_memory')
+
     def test_within_comment(self):
         self.assertTrue(Source('/* foo').within_comment_at(1024))
         self.assertFalse(Source('/* foo */').within_comment_at(1024))

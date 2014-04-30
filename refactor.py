@@ -13,10 +13,13 @@ import textwrap
 ############################################################################
 ws = '\s+'
 opt_ws = '\s*'
+open_paren = r'\('
 identifier = '[_a-zA-Z][_a-zA-Z0-9]*?'
 identifier_group = '(%s)' % identifier
 def named_identifier_group(name):
     return '(?P<%s>%s)' % (name, identifier)
+def named_string_literal(name):
+    return '\"(?P<%s>[^"]*)\"' % name
 
 ############################################################################
 # Generic hooks
@@ -170,8 +173,10 @@ def untabify(s):
     return s.expandtabs(8)
 
 class Source:
-    def __init__(self, s, changes=None):
+    def __init__(self, s, filename=None, changes=None):
         self._str = s
+
+        self.filename = filename
 
         # self.changes: set of indices where changes have happened
         if changes:
@@ -232,7 +237,8 @@ class Source:
                         for idx in self.changes
                         if idx >= to_idx])
         result =  Source(self._str[:from_idx] + replacement + self._str[to_idx:],
-                         changes)
+                         filename=self.filename,
+                         changes=changes)
         #result.show_changes()
         return result
 
@@ -273,6 +279,36 @@ class Source:
             within_quotes = not within_quotes
         return within_quotes
 
+    def get_change_scope_at(self, idx, raise_exception=False):
+        if self.filename:
+            if self.filename.endswith('.md'):
+                return self._md_get_change_scope_at(idx, raise_exception)
+
+        return self._c_based_get_change_scope_at(idx, raise_exception)
+
+    def _md_get_change_scope_at(self, idx, raise_exception=False):
+        # For .md files
+
+        # Look at the text leading up to the index point:
+        src = self._str[:idx]
+        if 0:
+            print('_md_get_change_scope_at: %r' % src)
+
+        PATTERN = ('\n' + open_paren
+                   + named_identifier_group('KIND')
+                   + ws
+                   + named_string_literal('WHAT'))
+        m = None
+        for m in re.finditer(PATTERN, src, re.MULTILINE | re.DOTALL):
+            pass
+        if m:
+            return m.groupdict()['WHAT']
+
+        # Not found
+        if raise_exception:
+            raise ValueError('could not locate scope at line: %r'
+                             % self.get_line_at(idx))
+
     FUNC_PATTERN = ('^' + named_identifier_group('FUNCNAME')
                     + r' \((?P<PARAMS>.*?)\)')
     METHOD_PATTERN = (r'(?P<CLASS_NAME>[_a-zA-Z][^\n]*?)::'
@@ -289,11 +325,13 @@ class Source:
                      + ws + ':' + ws + 'public' + ws + '$')
     FUNC_RETURN_PATTERN = (r'(?P<RETURN_TYPE>.+?)\s+' + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     GLOBAL_PATTERN = (r'(?P<TYPE>.+?)\s+' + named_identifier_group('GLOBAL') + opt_ws + ';')
-    def get_change_scope_at(self, idx, raise_exception=False):
+    def _c_based_get_change_scope_at(self, idx, raise_exception=False):
+        # For C/C++ files and headers
+
         # Look at the text leading up to the index point:
         src = self._str[:idx]
         if 0:
-            print('get_change_scope_at: %r' % src)
+            print('_c_based_get_change_scope_at: %r' % src)
 
         # Filter out GTY() markers:
         while 1:
@@ -498,7 +536,7 @@ def refactor_file(path, relative_path, refactoring, printdiff,
                   applychanges):
     with open(path) as f:
         srctext = f.read()
-        srcobj = Source(srctext)
+        srcobj = Source(srctext, relative_path)
     #print(src)
     assert path.startswith('../src/gcc/')
     dsttext, changelog = refactoring(relative_path, srcobj)
