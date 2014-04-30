@@ -172,6 +172,12 @@ def untabify(s):
     """
     return s.expandtabs(8)
 
+def get_last_match_multiline(pattern, text):
+    m = None
+    for m in re.finditer(pattern, text, re.MULTILINE | re.DOTALL):
+        pass
+    return m
+
 class Source:
     def __init__(self, s, filename=None, changes=None):
         self._str = s
@@ -298,9 +304,7 @@ class Source:
                    + named_identifier_group('KIND')
                    + ws
                    + named_string_literal('WHAT'))
-        m = None
-        for m in re.finditer(PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+        m = get_last_match_multiline(PATTERN, src)
         if m:
             return m.groupdict()['WHAT']
 
@@ -344,47 +348,44 @@ class Source:
                 break
 
         # Get last matches, if any:
-        m = None
-        for m in re.finditer(self.FUNC_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+        m = get_last_match_multiline(self.FUNC_PATTERN, src)
         if m:
             return m.groupdict()['FUNCNAME']
-        for m in re.finditer(self.METHOD_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.METHOD_PATTERN, src)
         if m:
             gd = m.groupdict()
             return ('%s::%s' %
                     (gd['CLASS_NAME'], gd['METHOD_NAME']))
-        for m in re.finditer(self.MACRO_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.MACRO_PATTERN, src)
         if m:
             return m.groupdict()['MACRO']
-        for m in re.finditer(self.STRUCT_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.STRUCT_PATTERN, src)
         if m:
             return 'struct %s' % m.groupdict()['STRUCTNAME']
-        for m in re.finditer(self.FUNC_PARAMS_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.FUNC_PARAMS_PATTERN, src)
         if m:
             return m.groupdict()['FUNCNAME']
-        for m in re.finditer(self.CLASS_PATTERN, src, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.CLASS_PATTERN, src)
         if m:
             return m.groupdict()['CLASS']
 
         # If that didn't give us a suitable location, look at the line
         # containing the index point.
         line = self.get_line_at(idx)
-        for m in re.finditer(self.FUNC_RETURN_PATTERN, line, re.MULTILINE | re.DOTALL):
-            pass
+        m = get_last_match_multiline(self.FUNC_RETURN_PATTERN, line)
         if m:
             return m.groupdict()['FUNCNAME']
-        for m in re.finditer(self.GLOBAL_PATTERN, line, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.GLOBAL_PATTERN, line)
         if m:
             return m.groupdict()['GLOBAL']
-        for m in re.finditer(self.METHOD_ARGS_PATTERN, line, re.MULTILINE | re.DOTALL):
-            pass
+
+        m = get_last_match_multiline(self.METHOD_ARGS_PATTERN, line)
         if m:
             gd = m.groupdict()
             return ('%s::%s' %
