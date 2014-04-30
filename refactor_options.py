@@ -294,6 +294,24 @@ class Options:
                    and not clog_filename.endswith('.md'):
                     continue
 
+                # config/vms/vms.opt has Var(flag_vms_malloc64);
+                # gcc/ada/gcc-interface/gigi.h #defines it for other
+                # targets.
+                if line.startswith('#define %s' % varname):
+                    continue
+
+                # Don't handle options within attributes, as these
+                # are for the build compiler:
+                ATTRIBUTE = '__attribute__(('
+                if src._str[m.start(1) - len(ATTRIBUTE):m.start(1)] == ATTRIBUTE:
+                    continue
+
+                # 'gcc/ada/gcc-interface/misc.c' has a mix of explicit
+                # variables for some of the options, and other options
+                # used normally; it must be done by hand
+                if clog_filename == 'gcc-interface/misc.c':
+                    continue
+
                 scope = src.get_change_scope_at(m.start())
                 replacement = 'GCC_OPTION (%s)' % m.group(1)
                 src = src.replace(m.start(1), m.end(1), replacement)

@@ -101,6 +101,12 @@ class OptionTests(TestParsingTests):
                             'Recognize built-in functions'])
         self.assertEqual(opt.var, 'flag_no_builtin')
 
+    def test_wformat(self):
+        opt = parse_record(['Wformat=',
+                            'C ObjC C++ ObjC++ Joined RejectNegative UInteger Var(warn_format) Warning LangEnabledBy(C ObjC C++ ObjC++,Wall, 1, 0)\n'
+                            'Warn about printf/scanf/strftime/strfmon format string anomalies\n'])
+        self.assertEqual(opt.var, 'warn_format')
+
 options = Options()
 
 class IntegrationTests(unittest.TestCase):
@@ -272,6 +278,23 @@ class IntegrationTests(unittest.TestCase):
             ' %{f*} %{g*:%{!g0:%{g*} %{!fno-working-directory:-fworking-directory}}} %{O*}\\n'
             ' %{undef} %{save-temps*:-fpch-preprocess}";\n')
         self.assertUnchanged(src, 'gcc.c')
+
+    def test_macro(self):
+        src = ('#if TARGET_ABI_OPEN_VMS == 0\n'
+               '#define flag_vms_malloc64 0\n'
+               '#endif\n')
+        self.assertUnchanged(src, 'gcc/ada/gcc-interface/gigi.h')
+
+    def test_attributes(self):
+        src = ('void __gnat_sigtramp (int signo, void *si, void *sc,\n'
+               '                      sighandler_t * handler)\n'
+               '                      __attribute__((optimize(2)));\n')
+        self.assertUnchanged(src, 'gcc/ada/sigtramp-armvxw.c')
+
+    def test_ada_misc_c(self):
+        src = ('int flag_short_enums;\n'
+               'enum stack_check_type flag_stack_check = NO_STACK_CHECK;\n')
+        self.assertUnchanged(src, 'gcc-interface/misc.c')
 
 if __name__ == '__main__':
     unittest.main()
