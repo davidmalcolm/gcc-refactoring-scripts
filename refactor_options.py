@@ -242,8 +242,9 @@ class Options:
         for varname, pattern in self.patterns:
             match = 0
             count += 1
-            if count % 100 == 0:
-                print('count: %i' % count)
+            if 0:
+                if count % 100 == 0:
+                    print('count: %i' % count)
 
             if varname == 'TARGET_ACCUMULATE_OUTGOING_ARGS':
                 # Nasty special-case: we're handling Vars from all .opt
