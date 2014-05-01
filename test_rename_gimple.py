@@ -110,6 +110,24 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'asan.c',
                                      expected_code, expected_changelog)
 
+    def test_initializer_2(self):
+        # (heavily edited)
+        src = (
+            'static void\n'
+            'maybe_move_debug_stmts_to_successors (copy_body_data *id, basic_block new_bb)\n'
+            '{\n'
+            '  gimple stmt = gsi_stmt (ssi), new_stmt;\n')
+        expected_code = (
+            'static void\n'
+            'maybe_move_debug_stmts_to_successors (copy_body_data *id, basic_block new_bb)\n'
+            '{\n'
+            '  gimple_stmt *stmt = gsi_stmt (ssi), *new_stmt;\n')
+        expected_changelog = \
+            ('\t* tree-inline.c (maybe_move_debug_stmts_to_successors): Replace\n'
+             '\t"gimple" typedef with "gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'tree-inline.c',
+                                     expected_code, expected_changelog)
+
     def test_function_decl(self):
         src = ('\n'
                'struct cgraph_edge *cgraph_create_edge (struct cgraph_node *,\n'
@@ -123,6 +141,21 @@ class Tests(unittest.TestCase):
             ('\t* cgraph.h (cgraph_create_edge): Replace "gimple" typedef with\n'
              '\t"gimple_stmt *".\n')
         self.assertRefactoringEquals(src, 'cgraph.h',
+                                     expected_code, expected_changelog)
+
+    def test_function_decl_2(self):
+        src = ('\n'
+               'static inline void\n'
+               'gimple_set_block (gimple g, tree block)\n'
+               '{\n')
+        expected_code = ('\n'
+               'static inline void\n'
+               'gimple_set_block (gimple_stmt *g, tree block)\n'
+               '{\n')
+        expected_changelog = \
+            ('\t* gimple.h (gimple_set_block): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
     def test_bb_union(self):

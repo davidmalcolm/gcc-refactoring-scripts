@@ -53,30 +53,7 @@ def rename_types(clog_filename, src):
             replacement = new
             start, end = m.start(1), m.end(1)
 
-            # Handle declarations, where more than one decl could be present
-            # Assume that such repeated declarations are the first thing on
-            # their line.
-            line = src.get_line_at(m.start(1))
-            if line.lstrip().startswith(old):
-                if 0:
-                    print('line: %r' % line)
-
-                # Handle such declarations the dirty way by replacing
-                # ", " with ", *":
-                assert new.endswith(' *')
-
-                DECL_PATTERN = opt_ws + '([^;]+);'
-                start_of_decls = start + len(old)
-                m = re.match(DECL_PATTERN,
-                             src._str[start_of_decls:],
-                             re.MULTILINE | re.DOTALL)
-                if 0:
-                    print(m.groups())
-                end_of_decls = start_of_decls + m.end(1)
-                decls = src._str[start_of_decls:end_of_decls]
-                if '(' not in decls and ')' not in decls:
-                    new_decls = decls.replace(', ', ', *')
-                    src = src.replace(start_of_decls, end_of_decls, new_decls)
+            src = _add_stars_in_decls(src, old, new, start, end)
 
             # Avoid turning:
             #   gimple stmt
@@ -97,6 +74,56 @@ def rename_types(clog_filename, src):
                          'Replace "gimple" typedef with "gimple_stmt *".')
 
     return src.str(), changelog
+
+def _add_stars_in_decls(src, old, new, start, end):
+    # Handle variable declarations, where more than one decl could be
+    # present.
+    # Assume that such repeated declarations are the first thing on
+    # their line.
+    line = src.get_line_at(start)
+    if not line.lstrip().startswith(old):
+        return src
+
+    if 0:
+        print('line: %r' % line)
+
+    # Handle such declarations the dirty way by replacing
+    # ", " with ", *":
+    assert new.endswith(' *')
+
+    DECL_PATTERN = opt_ws + '([^;]+);'
+    start_of_decls = start + len(old)
+    m = re.match(DECL_PATTERN,
+                 src._str[start_of_decls:],
+                 re.MULTILINE | re.DOTALL)
+    if not m:
+        return src
+
+    if 0:
+        print(m.groups())
+    end_of_decls = start_of_decls + m.end(1)
+    decls = src._str[start_of_decls:end_of_decls]
+
+    # Don't do this to function parameters:
+    if decls.startswith(','):
+        return src
+
+    # Replace ", " with ", *", but not within function calls:
+    new_decls = ''
+    paren_nesting = 0
+    for ch in decls:
+        if ch == '(':
+            paren_nesting += 1
+        elif ch == ')':
+            paren_nesting -= 1
+        elif ch == ' ':
+            if new_decls and new_decls[-1] == ',' and paren_nesting == 0:
+                ch = ' *'
+        new_decls += ch
+    if 0:
+        print('new_decls: %r' % new_decls)
+    src = src.replace(start_of_decls, end_of_decls, new_decls)
+    return src
 
 if __name__ == '__main__':
     main('rename_gimple.py', rename_types, sys.argv,
