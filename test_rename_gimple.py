@@ -77,5 +77,55 @@ class Tests(unittest.TestCase):
         src = '#include "gimple-expr.h"\n'
         self.assertUnchanged(src, 'alias.c')
 
+    def test_multiple_vars(self):
+        src = (
+            'rtx\n'
+            'expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,\n'
+            '\tgimple def0, def2;\n')
+        expected_code = (
+            'rtx\n'
+            'expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,\n'
+            '\tgimple_stmt *def0, *def2;\n')
+        expected_changelog = \
+            ('\t* expr.c (expand_expr_real_2): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'expr.c',
+                                     expected_code, expected_changelog)
+
+    def test_initializer(self):
+        # (heavily edited)
+        src = (
+            'static void\n'
+            'build_check_stmt (location_t location, tree base, gimple_stmt_iterator *iter)\n'
+            '{\n'
+            '\t      gimple shadow_test = build_assign (NE_EXPR, shadow, 0);\n')
+        expected_code = (
+            'static void\n'
+            'build_check_stmt (location_t location, tree base, gimple_stmt_iterator *iter)\n'
+            '{\n'
+            '\t      gimple_stmt *shadow_test = build_assign (NE_EXPR, shadow, 0);\n')
+        expected_changelog = \
+            ('\t* asan.c (build_check_stmt): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'asan.c',
+                                     expected_code, expected_changelog)
+
+    def test_function_decl(self):
+        src = ('\n'
+               'struct cgraph_edge *cgraph_create_edge (struct cgraph_node *,\n'
+               '                                        struct cgraph_node *,\n'
+               '                                        gimple, gcov_type, int);\n')
+        expected_code = ('\n'
+               'struct cgraph_edge *cgraph_create_edge (struct cgraph_node *,\n'
+               '                                        struct cgraph_node *,\n'
+               '                                        gimple_stmt *, gcov_type, int);\n')
+        expected_changelog = \
+            ('\t* cgraph.h (cgraph_create_edge): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'cgraph.h',
+                                     expected_code, expected_changelog)
+
+
+
 if __name__ == '__main__':
     unittest.main()

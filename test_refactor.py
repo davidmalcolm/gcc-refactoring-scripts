@@ -91,6 +91,17 @@ class GeneralTests(unittest.TestCase):
         self.assertEqual(src.get_change_scope_at(100),
                          'xtensa_memory')
 
+    def test_funcname_with_retval(self):
+        src = Source(
+            '\n'
+            'struct cgraph_edge *cgraph_create_edge (struct cgraph_node *,\n'
+            '                                        struct cgraph_node *,\n'
+            '                                        gimple, gcov_type, int);\n')
+        self.assertEqual(src.get_change_scope_at(200),
+                         'cgraph_create_edge')
+        self.assertEqual(src.get_change_scope_at(165),
+                         'cgraph_create_edge')
+
     def test_within_comment(self):
         self.assertTrue(Source('/* foo').within_comment_at(1024))
         self.assertFalse(Source('/* foo */').within_comment_at(1024))

@@ -17,6 +17,8 @@ open_paren = r'\('
 not_identifier= '[^_a-zA-Z0-9]'
 identifier = '[_a-zA-Z][_a-zA-Z0-9]*?'
 identifier_group = '(%s)' % identifier
+def named_group(pat, name):
+    return '(?P<%s>%s)' % (name, pat)
 def named_identifier_group(name):
     return '(?P<%s>%s)' % (name, identifier)
 def named_string_literal(name):
@@ -314,8 +316,15 @@ class Source:
             raise ValueError('could not locate scope at line: %r'
                              % self.get_line_at(idx))
 
-    FUNC_PATTERN = ('^' + named_identifier_group('FUNCNAME')
+    FUNC_PATTERN = ('^'
+                    + named_identifier_group('FUNCNAME')
                     + r' \((?P<PARAMS>.*?)\)')
+    FUNC_WITH_RETURN_TYPE_PATTERN = (
+        '^'
+        + named_group(r'[_A-Za-z0-9 ]+' + ws + r'\**?',
+                      'RETURN_TYPE')
+        + named_identifier_group('FUNCNAME')
+        + r' \((?P<PARAMS>.*?)')
     METHOD_PATTERN = (r'(?P<CLASS_NAME>[_a-zA-Z][^\n]*?)::'
                       + named_identifier_group('METHOD_NAME')
                       + r'\s+\((?P<PARAMS>.*?)\)\n{')
@@ -336,7 +345,7 @@ class Source:
         # Look at the text leading up to the index point:
         src = self._str[:idx]
         if 0:
-            print('_c_based_get_change_scope_at: %r' % src)
+            print('_c_based_get_change_scope_at: %i %r' % (idx, src))
 
         # Filter out GTY() markers:
         while 1:
@@ -350,6 +359,10 @@ class Source:
 
         # Get last matches, if any:
         m = get_last_match_multiline(self.FUNC_PATTERN, src)
+        if m:
+            return m.groupdict()['FUNCNAME']
+
+        m = get_last_match_multiline(self.FUNC_WITH_RETURN_TYPE_PATTERN, src)
         if m:
             return m.groupdict()['FUNCNAME']
 
