@@ -2,7 +2,7 @@ from collections import OrderedDict
 import re
 import sys
 
-from refactor import main, Changelog
+from refactor import main, Changelog, not_identifier
 
 PATTERN = r'->(symbol\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
@@ -19,7 +19,7 @@ def rename_types(clog_filename, src):
     for old, new in (("gimple", "gimple_stmt *"),
                      ("const_gimple", "const gimple_stmt *")):
         # this works backwards through the file
-        for m in src.finditer('[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]' % old):
+        for m in src.finditer(not_identifier + ('(%s)' % old) + not_identifier):
 
             # Don't change things within comments.
             if src.within_comment_at(m.start(1)):

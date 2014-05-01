@@ -2,7 +2,7 @@ from collections import OrderedDict
 import re
 import sys
 
-from refactor import main, Changelog
+from refactor import main, Changelog, not_identifier
 
 PATTERN = r'->(symbol\.)(\S)'
 pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
@@ -20,7 +20,7 @@ def rename_types(clog_filename, src):
                      ("symtab_node_base", "symtab_node"),
                      ('const_symtab_node', 'const symtab_node *')):
         # this works backwards through the file
-        for m in src.finditer('[^_a-zA-Z0-9](%s)[^_a-zA-Z0-9]' % old):
+        for m in src.finditer(not_identifier + ('(%s)' % old) + not_identifier):
             line = src.get_line_at(m.start(1))
             if line in ('   The symtab_node is inherited by cgraph and varpol nodes.  */',):
                 continue

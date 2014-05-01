@@ -14,6 +14,7 @@ import textwrap
 ws = '\s+'
 opt_ws = '\s*'
 open_paren = r'\('
+not_identifier= '[^_a-zA-Z0-9]'
 identifier = '[_a-zA-Z][_a-zA-Z0-9]*?'
 identifier_group = '(%s)' % identifier
 def named_identifier_group(name):
