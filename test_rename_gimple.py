@@ -125,6 +125,17 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cgraph.h',
                                      expected_code, expected_changelog)
 
+    def test_bb_union(self):
+        # Don't touch the "gimple" in "il.gimple.seq":
+        src = (
+            '\n'
+            'static inline gimple_seq\n'
+            'bb_seq (const_basic_block bb)\n'
+            '{\n'
+            '  return (!(bb->flags & BB_RTL)) ? bb->il.gimple.seq : NULL;\n'
+            '}\n')
+        self.assertUnchanged(src, 'gimple.h')
+
 
 
 if __name__ == '__main__':

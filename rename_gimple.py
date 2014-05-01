@@ -30,12 +30,20 @@ def rename_types(clog_filename, src):
             #   #include ""
             if src.within_string_literal_at(m.start(1)):
                 continue
+            # The above doesn't reject a string in gengtype.c for some
+            # reason; manually do so:
+            if clog_filename.endswith('gengtype.c'):
+                continue
 
             # Specialcase: don't touch basic-block.h due to union name:
             #   union basic_block_il_dependent {
             #      struct gimple_bb_info GTY ((tag ("0"))) gimple;
             #                                              ^^^^^^
             if clog_filename.endswith('basic-block.h'):
+                continue
+
+            # Don't touch the bb union e.g. "bb->il.gimple.seq":
+            if src._str[m.start(1) - 1] == '.':
                 continue
 
             scope = src.get_change_scope_at(m.start(1),
