@@ -4,9 +4,6 @@ import sys
 
 from refactor import main, Changelog, not_identifier
 
-PATTERN = r'->(symbol\.)(\S)'
-pattern = re.compile(PATTERN, re.MULTILINE | re.DOTALL)
-
 def rename_types(clog_filename, src):
     """
     Rename types:
