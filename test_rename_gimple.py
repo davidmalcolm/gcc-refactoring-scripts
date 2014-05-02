@@ -81,10 +81,12 @@ class Tests(unittest.TestCase):
         src = (
             'rtx\n'
             'expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,\n'
+            '{\n'
             '\tgimple def0, def2;\n')
         expected_code = (
             'rtx\n'
             'expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,\n'
+            '{\n'
             '\tgimple_stmt *def0, *def2;\n')
         expected_changelog = \
             ('\t* expr.c (expand_expr_real_2): Replace "gimple" typedef with\n'
@@ -147,15 +149,110 @@ class Tests(unittest.TestCase):
         src = ('\n'
                'static inline void\n'
                'gimple_set_block (gimple g, tree block)\n'
-               '{\n')
+               '{\n'
+               '  if (block)\n'
+               '    g->location =\n'
+               '	COMBINE_LOCATION_DATA (line_table, g->location, block);\n'
+               '  else\n'
+               '    g->location = LOCATION_LOCUS (g->location);\n'
+               '}\n')
         expected_code = ('\n'
                'static inline void\n'
                'gimple_set_block (gimple_stmt *g, tree block)\n'
-               '{\n')
+               '{\n'
+               '  if (block)\n'
+               '    g->location =\n'
+               '	COMBINE_LOCATION_DATA (line_table, g->location, block);\n'
+               '  else\n'
+               '    g->location = LOCATION_LOCUS (g->location);\n'
+               '}\n')
         expected_changelog = \
             ('\t* gimple.h (gimple_set_block): Replace "gimple" typedef with\n'
              '\t"gimple_stmt *".\n')
         self.assertRefactoringEquals(src, 'gimple.h',
+                                     expected_code, expected_changelog)
+
+    def test_function_decl_2(self):
+        src = (
+            '\n'
+            'void\n'
+            'dump_gimple_stmt_loc (int dump_kind, source_location loc, int extra_dump_flags,\n'
+            '                      gimple gs, int spc)\n'
+            '{\n'
+            '  if (dump_file && (dump_kind & pflags))\n'
+            '    {\n'
+            '      dump_loc (dump_kind, dump_file, loc);\n'
+            '      print_gimple_stmt (dump_file, gs, spc, dump_flags | extra_dump_flags);\n'
+            '    }\n'
+            '\n'
+            '  if (alt_dump_file && (dump_kind & alt_flags))\n'
+            '    {\n'
+            '      dump_loc (dump_kind, alt_dump_file, loc);\n'
+            '      print_gimple_stmt (alt_dump_file, gs, spc, dump_flags | extra_dump_flags);\n'
+            '    }\n'
+            '}\n')
+        expected_code = (
+            '\n'
+            'void\n'
+            'dump_gimple_stmt_loc (int dump_kind, source_location loc, int extra_dump_flags,\n'
+            '                      gimple_stmt *gs, int spc)\n'
+            '{\n'
+            '  if (dump_file && (dump_kind & pflags))\n'
+            '    {\n'
+            '      dump_loc (dump_kind, dump_file, loc);\n'
+            '      print_gimple_stmt (dump_file, gs, spc, dump_flags | extra_dump_flags);\n'
+            '    }\n'
+            '\n'
+            '  if (alt_dump_file && (dump_kind & alt_flags))\n'
+            '    {\n'
+            '      dump_loc (dump_kind, alt_dump_file, loc);\n'
+            '      print_gimple_stmt (alt_dump_file, gs, spc, dump_flags | extra_dump_flags);\n'
+            '    }\n'
+            '}\n')
+        expected_changelog = \
+            ('\t* dumpfile.c (dump_gimple_stmt_loc): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'dumpfile.c',
+                                     expected_code, expected_changelog)
+
+    def test_function_decl_3(self):
+        src = (
+            'struct cgraph_edge *\n'
+            'cgraph_clone_edge (struct cgraph_edge *e, struct cgraph_node *n,\n'
+            '                   gimple call_stmt, unsigned stmt_uid, gcov_type count_scale,\n'
+            '                   int freq_scale, bool update_original)\n'
+            '{\n'
+            '  struct cgraph_edge *new_edge;\n'
+            '  gcov_type count = apply_probability (e->count, count_scale);\n'
+            '  gcov_type freq;\n')
+        expected_code = (
+            'struct cgraph_edge *\n'
+            'cgraph_clone_edge (struct cgraph_edge *e, struct cgraph_node *n,\n'
+            '                   gimple_stmt *call_stmt, unsigned stmt_uid, gcov_type count_scale,\n'
+            '                   int freq_scale, bool update_original)\n'
+            '{\n'
+            '  struct cgraph_edge *new_edge;\n'
+            '  gcov_type count = apply_probability (e->count, count_scale);\n'
+            '  gcov_type freq;\n')
+        expected_changelog = \
+            ('\t* cgraphclones.c (cgraph_clone_edge): Replace "gimple" typedef with\n'
+             '\t"gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'cgraphclones.c',
+                                     expected_code, expected_changelog)
+
+    def test_function_decl_4(self):
+        src = (
+            'extern tree vect_create_data_ref_ptr (gimple, tree, struct loop *, tree,\n'
+            '				      tree *, gimple_stmt_iterator *,\n'
+            '				      gimple *, bool, bool *);\n')
+        expected_code = (
+            'extern tree vect_create_data_ref_ptr (gimple_stmt *, tree, struct loop *, tree,\n'
+            '				      tree *, gimple_stmt_iterator *,\n'
+            '				      gimple_stmt **, bool, bool *);\n')
+        expected_changelog = \
+            ('\t* tree-vectorizer.h (vect_create_data_ref_ptr): Replace "gimple"\n'
+             '\ttypedef with "gimple_stmt *".\n')
+        self.assertRefactoringEquals(src, 'tree-vectorizer.h',
                                      expected_code, expected_changelog)
 
     def test_bb_union(self):

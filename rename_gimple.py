@@ -80,9 +80,32 @@ def _add_stars_in_decls(src, old, new, start, end):
     # present.
     # Assume that such repeated declarations are the first thing on
     # their line.
+    if 0:
+        print('%r' % src._str)
+        print('start: %r' % start)
+
     line = src.get_line_at(start)
+    if not line[0].isspace():
+        return src
     if not line.lstrip().startswith(old):
         return src
+    if line.endswith(')') or line.endswith(','):
+        return src
+
+
+    # Are we within a function declaration:
+    last_idx_of_open_paren = src._str.rfind('(', 0, start)
+    last_idx_of_semicolon = src._str.rfind(';', 0, start)
+    last_idx_of_open_brace = src._str.rfind('{', 0, start)
+    if 0:
+        print('last_idx_of_open_paren: %r' % last_idx_of_open_paren)
+        print('last_idx_of_semicolon: %r' % last_idx_of_semicolon)
+        print('last_idx_of_open_brace: %r' % last_idx_of_open_brace)
+
+    if last_idx_of_open_brace < last_idx_of_open_paren:
+        if last_idx_of_open_paren > last_idx_of_semicolon:
+            # If so, don't add extra *:
+            return src
 
     if 0:
         print('line: %r' % line)
