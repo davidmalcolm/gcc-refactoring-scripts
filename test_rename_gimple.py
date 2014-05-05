@@ -172,7 +172,7 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
-    def test_function_decl_2(self):
+    def test_function_decl_3(self):
         src = (
             '\n'
             'void\n'
@@ -215,7 +215,7 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'dumpfile.c',
                                      expected_code, expected_changelog)
 
-    def test_function_decl_3(self):
+    def test_function_decl_4(self):
         src = (
             'struct cgraph_edge *\n'
             'cgraph_clone_edge (struct cgraph_edge *e, struct cgraph_node *n,\n'
@@ -240,7 +240,7 @@ class Tests(unittest.TestCase):
         self.assertRefactoringEquals(src, 'cgraphclones.c',
                                      expected_code, expected_changelog)
 
-    def test_function_decl_4(self):
+    def test_function_decl_5(self):
         src = (
             'extern tree vect_create_data_ref_ptr (gimple, tree, struct loop *, tree,\n'
             '				      tree *, gimple_stmt_iterator *,\n'
