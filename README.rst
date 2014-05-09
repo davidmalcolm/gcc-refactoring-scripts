@@ -54,7 +54,7 @@ with::
 have a single instance of options, perhaps explicitly adding a context
 arg to the macro???)
 
-Status: not yet working
+Status: posted as http://gcc.gnu.org/ml/gcc-patches/2014-05/msg00652.html
 
 .. Note to self: working copy: "gcc-git-options"
 
