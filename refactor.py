@@ -141,11 +141,63 @@ class Changelog:
 def wrap(text):
     """
     Word-wrap (to 70 columns) then add leading tab
+    Don't break within quoted strings
     """
+
+    class MyTextWrapper(textwrap.TextWrapper):
+        # Don't break within quoted strings
+        def _split(self, text):
+            # states:
+            ENTRY, WORD, WHITESPACE, QUOTE = range(4)
+
+            self.chunks = []
+            self.state = ENTRY
+            self.curchunk = ''
+
+            for ch in text:
+                if self.state == ENTRY:
+                    if ch.isspace():
+                        self._change_state_to(WHITESPACE, ch)
+                    elif ch == '"':
+                        self._change_state_to(QUOTE, ch)
+                    else:
+                        self._change_state_to(WORD, ch)
+                elif self.state == WORD:
+                    if ch.isspace():
+                        self._change_state_to(WHITESPACE, ch)
+                    else:
+                        self.curchunk += ch
+                elif self.state == WHITESPACE:
+                    if ch.isspace():
+                        self.curchunk += ch
+                    elif ch == '"':
+                        self._change_state_to(QUOTE, ch)
+                    else:
+                        self._change_state_to(WORD, ch)
+                elif self.state == QUOTE:
+                    if ch == '"':
+                        self.curchunk += ch
+                        self.chunks.append(self.curchunk)
+                        self.state = ENTRY
+                        self.curchunk = ''
+                    else:
+                        self.curchunk += ch
+                else:
+                    raise ValueError('Unknown state: %s' % state)
+            self._change_state_to(ENTRY, '')
+            return self.chunks
+
+        def _change_state_to(self, newstate, ch):
+            self.state = newstate
+            if self.curchunk:
+                self.chunks.append(self.curchunk)
+            self.curchunk = ch
+
     result = ''
+    tw = MyTextWrapper()
     for line in text.splitlines():
         result += '\n'.join(['\t%s' % wl
-                             for wl in textwrap.wrap(line)])
+                             for wl in tw.wrap(line)])
         result += '\n'
     return result
 

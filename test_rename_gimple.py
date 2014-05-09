@@ -46,13 +46,13 @@ class Tests(unittest.TestCase):
             '     needs to point to the original SSA name.  Since statements and\n'
             '     SSA names are of different data types, we need this union.  See\n'
             '     the explanation in struct imm_use_iterator.  */\n'
-            '  union { gimple_stmt *stmt; tree ssa_name; } GTY((skip(""))) loc;\n'
+            '  union { gimple *stmt; tree ssa_name; } GTY((skip(""))) loc;\n'
             '  tree *GTY((skip(""))) use;\n'
             '};\n')
 
         expected_changelog = \
             ('\t* tree-core.h (struct ssa_use_operand_t): Replace "gimple" typedef\n'
-             '\twith "gimple_stmt *".\n')
+             '\twith "gimple *".\n')
         self.assertRefactoringEquals(src, 'tree-core.h',
                                      expected_code, expected_changelog)
 
@@ -60,10 +60,10 @@ class Tests(unittest.TestCase):
         src = (
             'bool gimple_call_same_target_p (const_gimple, const_gimple);\n')
         expected_code = (
-            'bool gimple_call_same_target_p (const gimple_stmt *, const gimple_stmt *);\n')
+            'bool gimple_call_same_target_p (const gimple *, const gimple *);\n')
         expected_changelog = \
             ('\t* gimple.h (gimple_call_same_target_p): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
@@ -87,10 +87,10 @@ class Tests(unittest.TestCase):
             'rtx\n'
             'expand_expr_real_2 (sepops ops, rtx target, enum machine_mode tmode,\n'
             '{\n'
-            '\tgimple_stmt *def0, *def2;\n')
+            '\tgimple *def0, *def2;\n')
         expected_changelog = \
             ('\t* expr.c (expand_expr_real_2): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'expr.c',
                                      expected_code, expected_changelog)
 
@@ -105,10 +105,9 @@ class Tests(unittest.TestCase):
             'static void\n'
             'build_check_stmt (location_t location, tree base, gimple_stmt_iterator *iter)\n'
             '{\n'
-            '\t      gimple_stmt *shadow_test = build_assign (NE_EXPR, shadow, 0);\n')
+            '\t      gimple *shadow_test = build_assign (NE_EXPR, shadow, 0);\n')
         expected_changelog = \
-            ('\t* asan.c (build_check_stmt): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+            ('\t* asan.c (build_check_stmt): Replace "gimple" typedef with "gimple *".\n')
         self.assertRefactoringEquals(src, 'asan.c',
                                      expected_code, expected_changelog)
 
@@ -123,10 +122,10 @@ class Tests(unittest.TestCase):
             'static void\n'
             'maybe_move_debug_stmts_to_successors (copy_body_data *id, basic_block new_bb)\n'
             '{\n'
-            '  gimple_stmt *stmt = gsi_stmt (ssi), *new_stmt;\n')
+            '  gimple *stmt = gsi_stmt (ssi), *new_stmt;\n')
         expected_changelog = \
             ('\t* tree-inline.c (maybe_move_debug_stmts_to_successors): Replace\n'
-             '\t"gimple" typedef with "gimple_stmt *".\n')
+             '\t"gimple" typedef with "gimple *".\n')
         self.assertRefactoringEquals(src, 'tree-inline.c',
                                      expected_code, expected_changelog)
 
@@ -138,10 +137,10 @@ class Tests(unittest.TestCase):
         expected_code = ('\n'
                'struct cgraph_edge *cgraph_create_edge (struct cgraph_node *,\n'
                '                                        struct cgraph_node *,\n'
-               '                                        gimple_stmt *, gcov_type, int);\n')
+               '                                        gimple *, gcov_type, int);\n')
         expected_changelog = \
             ('\t* cgraph.h (cgraph_create_edge): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'cgraph.h',
                                      expected_code, expected_changelog)
 
@@ -158,7 +157,7 @@ class Tests(unittest.TestCase):
                '}\n')
         expected_code = ('\n'
                'static inline void\n'
-               'gimple_set_block (gimple_stmt *g, tree block)\n'
+               'gimple_set_block (gimple *g, tree block)\n'
                '{\n'
                '  if (block)\n'
                '    g->location =\n'
@@ -168,7 +167,7 @@ class Tests(unittest.TestCase):
                '}\n')
         expected_changelog = \
             ('\t* gimple.h (gimple_set_block): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'gimple.h',
                                      expected_code, expected_changelog)
 
@@ -195,7 +194,7 @@ class Tests(unittest.TestCase):
             '\n'
             'void\n'
             'dump_gimple_stmt_loc (int dump_kind, source_location loc, int extra_dump_flags,\n'
-            '                      gimple_stmt *gs, int spc)\n'
+            '                      gimple *gs, int spc)\n'
             '{\n'
             '  if (dump_file && (dump_kind & pflags))\n'
             '    {\n'
@@ -211,7 +210,7 @@ class Tests(unittest.TestCase):
             '}\n')
         expected_changelog = \
             ('\t* dumpfile.c (dump_gimple_stmt_loc): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'dumpfile.c',
                                      expected_code, expected_changelog)
 
@@ -228,7 +227,7 @@ class Tests(unittest.TestCase):
         expected_code = (
             'struct cgraph_edge *\n'
             'cgraph_clone_edge (struct cgraph_edge *e, struct cgraph_node *n,\n'
-            '                   gimple_stmt *call_stmt, unsigned stmt_uid, gcov_type count_scale,\n'
+            '                   gimple *call_stmt, unsigned stmt_uid, gcov_type count_scale,\n'
             '                   int freq_scale, bool update_original)\n'
             '{\n'
             '  struct cgraph_edge *new_edge;\n'
@@ -236,7 +235,7 @@ class Tests(unittest.TestCase):
             '  gcov_type freq;\n')
         expected_changelog = \
             ('\t* cgraphclones.c (cgraph_clone_edge): Replace "gimple" typedef with\n'
-             '\t"gimple_stmt *".\n')
+             '\t"gimple *".\n')
         self.assertRefactoringEquals(src, 'cgraphclones.c',
                                      expected_code, expected_changelog)
 
@@ -246,12 +245,12 @@ class Tests(unittest.TestCase):
             '				      tree *, gimple_stmt_iterator *,\n'
             '				      gimple *, bool, bool *);\n')
         expected_code = (
-            'extern tree vect_create_data_ref_ptr (gimple_stmt *, tree, struct loop *, tree,\n'
+            'extern tree vect_create_data_ref_ptr (gimple *, tree, struct loop *, tree,\n'
             '				      tree *, gimple_stmt_iterator *,\n'
-            '				      gimple_stmt **, bool, bool *);\n')
+            '				      gimple **, bool, bool *);\n')
         expected_changelog = \
             ('\t* tree-vectorizer.h (vect_create_data_ref_ptr): Replace "gimple"\n'
-             '\ttypedef with "gimple_stmt *".\n')
+             '\ttypedef with "gimple *".\n')
         self.assertRefactoringEquals(src, 'tree-vectorizer.h',
                                      expected_code, expected_changelog)
 

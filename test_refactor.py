@@ -4,6 +4,8 @@ from refactor import tabify, \
     ChangeLogLayout, ChangeLogAdditions, Changelog, \
     AUTHOR, Source
 
+TEST_ISODATE = '1066-10-14'
+
 class GeneralTests(unittest.TestCase):
     def assertTabifyEquals(self, input_code, expected_result):
         actual_result = tabify(input_code)
@@ -134,7 +136,6 @@ class ChangeLogTests(unittest.TestCase):
                          '../src/gcc/testsuite')
 
     def test_additions(self):
-        TEST_ISODATE = '1066-10-14'
         cla = ChangeLogAdditions(self.cll, TEST_ISODATE, AUTHOR,
                                  'This is some header text')
         clog_foo = Changelog('foo.c')
@@ -175,6 +176,25 @@ class ChangeLogTests(unittest.TestCase):
         self.assertEqual(
             self.cll.get_path_relative_to_changelog('../src/gcc/testsuite/g++.dg/some-file.c'),
             'g++.dg/some-file.c')
+
+    def test_line_breaking_with_quotes(self):
+        cla = ChangeLogAdditions(self.cll, TEST_ISODATE, AUTHOR,
+                                 'This is some header text')
+        clog_foo = Changelog('cgraph.h')
+        clog_foo.append('cgraph_create_edge',
+                        'Replace "gimple" typedef with "gimple *".')
+
+        cla.add_file('../src/gcc/foo.c', clog_foo)
+
+        # We shouldn't have a linebreak within '"gimple *"'
+        self.maxDiff = 8192
+        self.assertMultiLineEqual(
+            cla.text_per_dir['../src/gcc'],
+            ('1066-10-14  David Malcolm  <dmalcolm@redhat.com>\n'
+             '\n'
+             'This is some header text\n'
+             '\t* cgraph.h (cgraph_create_edge): Replace "gimple" typedef with\n'
+             '\t"gimple *".\n'))
 
 class TestWrapping(unittest.TestCase):
     def assertWrappedCodeEquals(self, src, expected_code):

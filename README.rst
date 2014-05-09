@@ -65,12 +65,11 @@ in favor of something else (perhaps just "gimple \*"); see :
 
   http://gcc.gnu.org/ml/gcc-patches/2014-04/msg01562.html
 
-Status: works well enough to port the existing code (renaming to "gimple_stmt *",
-which may well not be the final name).
+Status: works well enough to port the existing code (renaming to "gimple *").
 
 Posted as: http://gcc.gnu.org/ml/gcc-patches/2014-05/msg00129.html
 
-Review paused, whilst wide-int is merged.
+Review in progress; commits to trunk waiting until after 4.9.1 is released.
 
 .. Note to self: working copy: "gcc-git-is-a-pointerness"
 

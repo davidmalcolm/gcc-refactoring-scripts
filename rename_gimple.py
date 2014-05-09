@@ -4,6 +4,26 @@ import sys
 
 from refactor import main, Changelog, not_identifier, opt_ws
 
+EXCLUDED_LINES = set([
+    # coretypes.h:
+    'class gimple;',
+    'typedef gimple *gimple_seq;',
+
+    # gimple-pretty-print.c:
+    'debug (gimple &ref)',
+    'debug (gimple *ptr)',
+
+    # gimple-pretty-print.h:
+    'extern void debug (gimple &ref);',
+    'extern void debug (gimple *ptr);',
+
+    # system.h:
+    '#define CONST_CAST_GIMPLE(X) CONST_CAST (gimple *, (X))',
+
+    # tree-ssa-ccp.c:
+    'typedef hash_table <pointer_hash <gimple> > gimple_htab;',
+])
+
 def rename_types(clog_filename, src):
     """
     Rename types:
@@ -13,8 +33,8 @@ def rename_types(clog_filename, src):
     changelog = Changelog(clog_filename)
     scopes = OrderedDict()
 
-    for old, new in (("gimple", "gimple_stmt *"),
-                     ("const_gimple", "const gimple_stmt *")):
+    for old, new in (("gimple", "gimple *"),
+                     ("const_gimple", "const gimple *")):
         # this works backwards through the file
         for m in src.finditer(not_identifier + ('(%s)' % old) + not_identifier):
             if 0:
@@ -46,6 +66,19 @@ def rename_types(clog_filename, src):
             if src._str[m.start(1) - 1] == '.':
                 continue
 
+            # Skip some specific lines:
+            line = src.get_line_at(m.start(1))
+            if line.strip() in EXCLUDED_LINES:
+                continue
+
+            # Don't touch inheritance from "gimple":
+            if line.endswith(': public gimple'):
+                continue
+
+            # Don't touch the name of the base class in its declaration:
+            if line == '  gimple':
+                continue
+
             scope = src.get_change_scope_at(m.start(1),
                                             raise_exception=True)
             if 0:
@@ -71,7 +104,7 @@ def rename_types(clog_filename, src):
     # Put the scopes back into forward order in the ChangeLog:
     for scope in list(scopes)[::-1]:
         changelog.append(scope,
-                         'Replace "gimple" typedef with "gimple_stmt *".')
+                         'Replace "gimple" typedef with "gimple *".')
 
     return src.str(), changelog
 
