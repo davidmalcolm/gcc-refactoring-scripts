@@ -79,13 +79,18 @@ class Parser:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
-            scope = m.group(2).split(' ')
-            if scope[0] == 'struct':
-                # e.g. "struct foo"
-                scope = ' '.join(scope)
+            if m is None:
+                # A hunk near the start of the file may not have any
+                # function name at all.
+                scope = ''
             else:
-                # Assume a function decl with args; use just the name:
-                scope = scope[0]
+                scope = m.group(2).split(' ')
+                if scope[0] == 'struct':
+                    # e.g. "struct foo"
+                    scope = ' '.join(scope)
+                else:
+                    # Assume a function decl with args; use just the name:
+                    scope = scope[0]
             if self.initial_hunk:
                 indent = ''
                 self.initial_hunk = False
@@ -108,10 +113,10 @@ def main():
     argp = argparse.ArgumentParser(description='Auto-generate ChangeLog entries')
     argp.add_argument('--no-hunks', help='omit hunk from output',
                       action='store_true', default=False, dest='omit_hunks')
-    argp.add_argument('files', action='append', nargs='*')
+    argp.add_argument('files', nargs='*')
 
     parsed_args = argp.parse_args()
-    sys.argv = parsed_args.files
+    sys.argv[1:] = parsed_args.files
 
     p = Parser(parsed_args.omit_hunks)
     for line in fileinput.input():
