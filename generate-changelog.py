@@ -79,7 +79,10 @@ class Parser:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
-            scope = m.group(2).split(' ')
+            if m:
+                scope = m.group(2).split(' ')
+            else:
+                scope = ['UNKNOWN']
             if scope[0] == 'struct':
                 # e.g. "struct foo"
                 scope = ' '.join(scope)
