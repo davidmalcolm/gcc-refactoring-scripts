@@ -20,13 +20,21 @@ import argparse
 from refactor import ChangeLogLayout
 
 class Parser:
-    def __init__(self, omit_hunks):
+    def __init__(self, omit_hunks, show_linenums):
         self.cll = ChangeLogLayout('.')
         self.within_preamble = True
         self.initial_hunk = False
         self.current_dir = ''
         self.omit_hunks = omit_hunks
+        self.show_linenums = show_linenums
         self.previous_scope = None
+
+    def parse_linespans(self, linespans):
+        numgrp = '([0-9]+)'
+        pat = ('-' + numgrp +',' + numgrp + ' '
+               r'\+' + numgrp +',' + numgrp)
+        m = re.match(pat, linespans)
+        return m.groups()
 
     def on_line(self, line):
         if self.within_preamble:
@@ -79,6 +87,10 @@ class Parser:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
+            if self.show_linenums:
+                linespans = m.group(1)
+                startline = self.parse_linespans(linespans)[2]
+                sys.stdout.write(startline)
             if m:
                 scope = m.group(2).split(' ')
             else:
@@ -111,12 +123,17 @@ def main():
     argp = argparse.ArgumentParser(description='Auto-generate ChangeLog entries')
     argp.add_argument('--no-hunks', help='omit hunk from output',
                       action='store_true', default=False, dest='omit_hunks')
+    # The following option may be useful when merging ChangeLog entries, for
+    # keeping the entries sorted relative to the underlying file.
+    argp.add_argument('--show-linenums', help='prepend line numbers',
+                      action='store_true', default=False, dest='show_linenums')
     argp.add_argument('files', action='append', nargs='*')
 
     parsed_args = argp.parse_args()
     sys.argv = parsed_args.files
 
-    p = Parser(parsed_args.omit_hunks)
+    p = Parser(parsed_args.omit_hunks,
+               parsed_args.show_linenums)
     for line in fileinput.input():
         p.on_line(line)
 
