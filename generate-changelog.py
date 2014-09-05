@@ -68,11 +68,11 @@ class Parser:
             assert dir_.startswith('./')
             dir_ = dir_[2:]
 
-            # Emit e.g. "gcc/" whenever the enclosing ChangeLog
+            # Emit e.g. "gcc/ChangeLog:" whenever the enclosing ChangeLog
             # changes.
             if dir_ != self.current_dir:
                 self.current_dir = dir_
-                print('%s/' % dir_)
+                print('%s/ChangeLog:' % dir_)
 
             # Get path relative to the ChangeLog file
             # e.g. "gimple.h"
