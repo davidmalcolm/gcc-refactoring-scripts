@@ -1,4 +1,5 @@
 all:
+	python gcc_mail_archive.py -v
 	python test_refactor.py -v
 	python test_refactor_cfun.py -v
 	#python test_refactor_gimple.py -v
