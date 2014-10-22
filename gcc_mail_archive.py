@@ -1,12 +1,14 @@
 from collections import namedtuple
 import re
 import unittest
+import urlparse
 
 from bs4 import BeautifulSoup
 
 class Mail(namedtuple('Mail',
                       ('subject', 'href', 'sender'))):
-    pass
+    def get_url(self, index_url):
+        return urlparse.urljoin(index_url, self.href)
 
 class MailArchive:
     def __init__(self, path):
