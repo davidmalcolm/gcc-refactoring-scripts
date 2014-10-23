@@ -4,7 +4,7 @@ import os
 import re
 
 from gcc_mail_archive import MailArchive
-from approvals import APPROVALS
+from gimple_approvals import APPROVALS
 
 INDEX_URL = 'https://gcc.gnu.org/ml/gcc-patches/2014-04/index.html'
 IN_DIR = '../src/v11-patches'
