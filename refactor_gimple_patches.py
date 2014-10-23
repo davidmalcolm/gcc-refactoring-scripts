@@ -2,6 +2,7 @@ from email.parser import Parser
 import glob
 import os
 import re
+import textwrap
 
 from gcc_mail_archive import MailArchive
 from gimple_approvals import APPROVALS
@@ -64,11 +65,10 @@ for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
         raise ValueError('approval URL not found')
     if not approval_text:
         raise ValueError('approval text not found')
-    msg += 'The earlier patch was approved by Jeff in:\n'
-    msg += '  %s\n' % approval_url
-    msg += '[..snip..]\n'
+    msg += 'That earlier patch was approved by Jeff:\n'
     for line in approval_text.splitlines():
-        msg += '> %s\n' % line.strip()
-    msg += '[..snip..]\n'
+        for line in textwrap.wrap(line):
+            msg += '> %s\n' % line.strip()
+    msg += 'in %s\n' % approval_url
 
     print(msg)
