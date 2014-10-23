@@ -22,6 +22,10 @@ class Patch:
         #print(self.msg['Subject'])
 
     @property
+    def basename(self):
+        return os.path.basename(self.path)
+
+    @property
     def subject(self):
         return self.msg['Subject']
 
@@ -69,6 +73,13 @@ for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
     for line in approval_text.splitlines():
         for line in textwrap.wrap(line):
             msg += '> %s\n' % line.strip()
-    msg += 'in %s\n' % approval_url
+    msg += 'in %s\n\n' % approval_url
 
-    print(msg)
+    #print(msg)
+
+    payload = p.msg.get_payload()
+    payload = msg + payload
+    p.msg.set_payload(payload)
+
+    with open(os.path.join(OUT_DIR, p.basename), 'w') as f:
+        f.write(str(p.msg))
