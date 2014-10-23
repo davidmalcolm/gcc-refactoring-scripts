@@ -136,9 +136,7 @@ stmt_classes = [
               'gomp_teams'),
 ]
 
-print(stmt_classes)
-
-def rename_types(text):
+def rename_types(text, where):
     """
     Update patches to follow the naming convention from
       https://gcc.gnu.org/ml/gcc-patches/2014-05/msg00346.html
@@ -154,7 +152,9 @@ def rename_types(text):
     FIXME: Only touch lines in ChangeLog, and those beginning with a +???
     FIXME: but we need to touch the - as well sometimes
     """
+    assert where in ('subject', 'patch')
     src = Source(text)
+    patterns = []
     for subclass in stmt_classes:
         for old, new in ((subclass.orig_name,
                           subclass.new_name),
@@ -162,8 +162,13 @@ def rename_types(text):
                           '%s *' % subclass.new_name),
                          ('const_%s' % subclass.typedef,
                           'const %s *' % subclass.new_name)):
+            patterns.append((old, new, not_identifier + ('(%s)' % old) + not_identifier))
+            # Also match at the very end:
+            patterns.append((old, new, not_identifier + ('(%s)$' % old)))
+
+    for old, new, pattern in patterns:
             # this works backwards through the file
-            for m in src.finditer(not_identifier + ('(%s)' % old) + not_identifier):
+            for m in src.finditer_multiline(pattern):
                 if 0:
                     print(m.start(1))
                     print(m.end(1))
@@ -178,9 +183,9 @@ def rename_types(text):
                 # converting into
                 #   gswitch *stmt
                 # instead.
-                if new.endswith(' *') and src._str[end] == ' ':
-                    end += 1
-                # FIXME: though not in a ChangeLog fragment
+                if where == 'patch':
+                    if new.endswith(' *') and src._str[end] == ' ':
+                        end += 1
 
                 src = src.replace(start, end, replacement)
     return src.str()
@@ -193,16 +198,21 @@ def main():
     for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
         print(f)
         p = Patch(f)
-        print(repr(p.subject))
+        print('  was: %r' % p.subject)
         if 'Update gimple.texi for' in p.subject:
             continue
         summary = p.summary
         if 0:
             print(repr(summary))
 
+        # Update the subclasses in the patch:
         text = str(p.msg.get_payload())
-        text = rename_types(text)
+        text = rename_types(text, 'patch')
         p.msg.set_payload(text)
+
+        # and in the Subject:
+        p.msg.replace_header('Subject',
+                             rename_types(p.msg['Subject'], 'subject'))
 
         # Locate the corresponding patch submitted in April 2014:
         pat = r'\[PATCH ([0-9]+)/89\] %s' % summary
@@ -232,6 +242,8 @@ def main():
         payload = p.msg.get_payload()
         payload = msg + payload
         p.msg.set_payload(payload)
+
+        print('  now: %r' % p.subject)
 
         with open(os.path.join(OUT_DIR, p.basename), 'w') as f:
             f.write(str(p.msg))

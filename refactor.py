@@ -281,6 +281,13 @@ class Source:
         """
         return list(re.finditer(pattern, self._str))[::-1]
 
+    def finditer_multiline(self, pattern):
+        """
+        Return the matches in reverse order so that changes later on
+        don't disturb indices into the string earlier on.
+        """
+        return list(re.finditer(pattern, self._str, re.MULTILINE | re.DOTALL))[::-1]
+
     def search(self, pattern):
         return re.search(pattern, self._str)
 
