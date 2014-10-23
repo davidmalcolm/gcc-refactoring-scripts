@@ -32,54 +32,57 @@ class Patch:
     @property
     def summary(self):
         pat = r'\[PATCH ([0-9]+)/([0-9]+)\] (.+)'
-        m = re.match(pat, p.subject, re.DOTALL)
+        m = re.match(pat, self.subject, re.DOTALL)
         summary = m.group(3)
         summary = summary.replace('\n', '')
         return summary
 
-# Read mail archive
-ma = MailArchive('gcc-patches-2014-04-index.html')
+def main():
+    # Read mail archive
+    ma = MailArchive('gcc-patches-2014-04-index.html')
 
-# Open directory of candidate .patch files
+    # Open directory of candidate .patch files
+    for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
+        print(f)
+        p = Patch(f)
+        print(repr(p.subject))
+        if 'Update gimple.texi for' in p.subject:
+            continue
+        summary = p.summary
+        if 0:
+            print(repr(summary))
 
-for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
-    print(f)
-    p = Patch(f)
-    print(repr(p.subject))
-    if 'Update gimple.texi for' in p.subject:
-        continue
-    summary = p.summary
-    if 0:
-        print(repr(summary))
+        # Locate the corresponding patch submitted in April 2014:
+        pat = r'\[PATCH ([0-9]+)/89\] %s' % summary
+        m = ma.find_by_subject(pat)
+        if not m:
+            raise ValueError("Couldn't find original patch with summary: %r"
+                             % summary)
+        msg = 'This corresponds to:\n'
+        msg += '  %s\n' % m.subject
+        msg += '  %s\n' % m.get_url(INDEX_URL)
+        msg += 'from the original 89-patch kit\n'
+        msg += '\n'
 
-    # Locate the corresponding patch submitted in April 2014:
-    pat = r'\[PATCH ([0-9]+)/89\] %s' % summary
-    m = ma.find_by_subject(pat)
-    if not m:
-        raise ValueError("Couldn't find original patch with summary: %r"
-                         % summary)
-    msg = 'This corresponds to:\n'
-    msg += '  %s\n' % m.subject
-    msg += '  %s\n' % m.get_url(INDEX_URL)
-    msg += 'from the original 89-patch kit\n'
-    msg += '\n'
+        approval_url, approval_text = APPROVALS[m.subject]
+        if not approval_url:
+            raise ValueError('approval URL not found')
+        if not approval_text:
+            raise ValueError('approval text not found')
+        msg += 'That earlier patch was approved by Jeff:\n'
+        for line in approval_text.splitlines():
+            for line in textwrap.wrap(line):
+                msg += '> %s\n' % line.strip()
+        msg += 'in %s\n\n' % approval_url
 
-    approval_url, approval_text = APPROVALS[m.subject]
-    if not approval_url:
-        raise ValueError('approval URL not found')
-    if not approval_text:
-        raise ValueError('approval text not found')
-    msg += 'That earlier patch was approved by Jeff:\n'
-    for line in approval_text.splitlines():
-        for line in textwrap.wrap(line):
-            msg += '> %s\n' % line.strip()
-    msg += 'in %s\n\n' % approval_url
+        #print(msg)
 
-    #print(msg)
+        payload = p.msg.get_payload()
+        payload = msg + payload
+        p.msg.set_payload(payload)
 
-    payload = p.msg.get_payload()
-    payload = msg + payload
-    p.msg.set_payload(payload)
+        with open(os.path.join(OUT_DIR, p.basename), 'w') as f:
+            f.write(str(p.msg))
 
-    with open(os.path.join(OUT_DIR, p.basename), 'w') as f:
-        f.write(str(p.msg))
+if __name__ == '__main__':
+    main()
