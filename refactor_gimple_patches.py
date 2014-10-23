@@ -4,6 +4,7 @@ import os
 import re
 
 from gcc_mail_archive import MailArchive
+from approvals import APPROVALS
 
 INDEX_URL = 'https://gcc.gnu.org/ml/gcc-patches/2014-04/index.html'
 IN_DIR = '../src/v11-patches'
@@ -52,7 +53,22 @@ for i, f in enumerate(sorted(glob.glob(os.path.join(IN_DIR, '*.patch')))):
     if not m:
         raise ValueError("Couldn't find original patch with summary: %r"
                          % summary)
-    print('This corresponds to:\n')
-    print('  %s\n' % m.subject)
-    print('  %s\n' % m.get_url(INDEX_URL))
-    print('from the original 89-patch kit\n')
+    msg = 'This corresponds to:\n'
+    msg += '  %s\n' % m.subject
+    msg += '  %s\n' % m.get_url(INDEX_URL)
+    msg += 'from the original 89-patch kit\n'
+    msg += '\n'
+
+    approval_url, approval_text = APPROVALS[m.subject]
+    if not approval_url:
+        raise ValueError('approval URL not found')
+    if not approval_text:
+        raise ValueError('approval text not found')
+    msg += 'The earlier patch was approved by Jeff in:\n'
+    msg += '  %s\n' % approval_url
+    msg += '[..snip..]\n'
+    for line in approval_text.splitlines():
+        msg += '> %s\n' % line.strip()
+    msg += '[..snip..]\n'
+
+    print(msg)
