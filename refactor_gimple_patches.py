@@ -1,44 +1,17 @@
 from collections import namedtuple
-from email.parser import Parser
 import glob
 import os
-import re
 import textwrap
 
 from gcc_mail_archive import MailArchive
 from gimple_approvals import APPROVALS
+from patch import Patch
 from refactor import Source, not_identifier
 from rename_gimple import _add_stars_in_decls
 
 INDEX_URL = 'https://gcc.gnu.org/ml/gcc-patches/2014-04/index.html'
 IN_DIR = '../src/v11-patches'
 OUT_DIR = '../src/generated-patches'
-
-class Patch:
-    def __init__(self, path):
-        self.path = path
-        with open(path) as f:
-            self.content = f.read()
-        #print(repr(self.content))
-        self.msg = Parser().parsestr(self.content)
-        #print(self.msg)
-        #print(self.msg['Subject'])
-
-    @property
-    def basename(self):
-        return os.path.basename(self.path)
-
-    @property
-    def subject(self):
-        return self.msg['Subject']
-
-    @property
-    def summary(self):
-        pat = r'\[PATCH ([0-9]+)/([0-9]+)\] (.+)'
-        m = re.match(pat, self.subject, re.DOTALL)
-        summary = m.group(3)
-        summary = summary.replace('\n', '')
-        return summary
 
 class StmtClass(namedtuple('StmtClass',
                            ('orig_name', 'typedef', 'new_name'))):
