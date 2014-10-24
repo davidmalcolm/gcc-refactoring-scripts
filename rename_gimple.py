@@ -108,16 +108,23 @@ def rename_types(clog_filename, src):
 
     return src.str(), changelog
 
-def _add_stars_in_decls(src, old, new, start, end):
+def _add_stars_in_decls(src, old, new, start, end, within_patch=0):
     # Handle variable declarations, where more than one decl could be
     # present.
     # Assume that such repeated declarations are the first thing on
     # their line.
     if 0:
-        print('%r' % src._str)
+        print('_add_stars_in_decls(src=%r, old=%r, new=%r, start=%r, end=%r, within_patch=%r)'
+              % (src.str(), old, new, start, end, within_patch))
+        print(src._str.replace('\n', ' '))
+        print((' ' * start) + '^')
+        print((' ' * end) + '^')
         print('start: %r' % start)
 
     line = src.get_line_at(start)
+    if within_patch:
+        # skip leading "-", "+", " " character:
+        line = line[1:]
     if not line[0].isspace():
         return src
     if not line.lstrip().startswith(old):

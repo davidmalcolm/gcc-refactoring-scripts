@@ -8,6 +8,7 @@ import textwrap
 from gcc_mail_archive import MailArchive
 from gimple_approvals import APPROVALS
 from refactor import Source, not_identifier
+from rename_gimple import _add_stars_in_decls
 
 INDEX_URL = 'https://gcc.gnu.org/ml/gcc-patches/2014-04/index.html'
 IN_DIR = '../src/v11-patches'
@@ -166,6 +167,11 @@ def rename_types(text, where):
             # Also match at the very end:
             patterns.append((old, new, not_identifier + ('(%s)$' % old)))
 
+    patterns.append( ('gimple_phi_iterator', 'gphi_iterator',
+                      not_identifier + '(gimple_phi_iterator)' + not_identifier) )
+    patterns.append( ('gimple_phi_iterator', 'gphi_iterator',
+                      not_identifier + '(gimple_phi_iterator)$') )
+
     for old, new, pattern in patterns:
             # this works backwards through the file
             for m in src.finditer_multiline(pattern):
@@ -175,6 +181,13 @@ def rename_types(text, where):
                     print(src._str[m.start(1):m.end(1)])
                 replacement = new
                 start, end = m.start(1), m.end(1)
+
+                replacement = new
+                start, end = m.start(1), m.end(1)
+
+                if new.endswith(' *'):
+                    src = _add_stars_in_decls(src, old, new, start, end,
+                                              within_patch=1)
 
                 # Avoid turning:
                 #   gimple_switch stmt
