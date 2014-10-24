@@ -218,14 +218,15 @@ def main():
         if 0:
             print(repr(summary))
 
-        # Update the subclasses in the patch:
-        text = str(p.msg.get_payload())
-        text = rename_types(text, 'patch')
-        p.msg.set_payload(text)
+        if 0:
+            # Update the subclasses in the patch:
+            text = str(p.msg.get_payload())
+            text = rename_types(text, 'patch')
+            p.msg.set_payload(text)
 
-        # and in the Subject:
-        p.msg.replace_header('Subject',
-                             rename_types(p.msg['Subject'], 'subject'))
+            # and in the Subject:
+            p.msg.replace_header('Subject',
+                                 rename_types(p.msg['Subject'], 'subject'))
 
         # Locate the corresponding patch submitted in April 2014:
         pat = r'\[PATCH ([0-9]+)/89\] %s' % summary
