@@ -88,12 +88,12 @@ class ChangeLogAdditions:
                                        + self.headertext + '\n')
         self.text_per_dir[dir_] += filetext
 
-    def apply(self, printdiff):
+    def apply(self, printdiff, clogname='ChangeLog'):
         """
         Apply the changes to the ChangeLog files on disk
         """
         for dir_ in self.text_per_dir:
-            filename = os.path.join(dir_, 'ChangeLog')
+            filename = os.path.join(dir_, clogname)
             with open(filename, 'r') as f:
                 old_contents = f.read()
             new_contents = self.text_per_dir[dir_] + '\n' + old_contents
@@ -671,10 +671,10 @@ class ChangeSet:
         assert isinstance(changelog, Changelog)
         return path, changelog
 
-    def build_changelog(self):
+    def build_changelog(self, clogname='ChangeLog'):
         for path in sorted(self.changelogs):
             self.cla.add_file(path, self.changelogs[path])
-        self.cla.apply(printdiff=True)
+        self.cla.apply(printdiff=True, clogname=clogname)
 
 # multiprocessing.Pool uses pickle, which can't cope with
 # instance methods, lambdas, or nested functions.  Hence we have to do
@@ -689,7 +689,8 @@ def c_and_h_files(path):
                  path.endswith('.h')))
 
 def main(script, refactoring, argv, skip_testsuite=False,
-         path_filter=c_and_h_files):
+         path_filter=c_and_h_files,
+         clogname='ChangeLog'):
     # Gather list of paths of files to be refactored
     if len(argv) > 1:
         # Use paths specified at the command line
@@ -730,4 +731,4 @@ def main(script, refactoring, argv, skip_testsuite=False,
             path, changelog = cs.do_one_path(path)
             cs.changelogs[path] = changelog
 
-    cs.build_changelog()
+    cs.build_changelog(clogname)

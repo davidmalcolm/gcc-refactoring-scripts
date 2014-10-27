@@ -1,4 +1,4 @@
-from collections import namedtuple
+from collections import namedtuple, OrderedDict
 import glob
 import os
 import textwrap
@@ -110,7 +110,7 @@ stmt_classes = [
               'gomp_teams'),
 ]
 
-def rename_types(text, where):
+def rename_types_in_src(src, where, changelog):
     """
     Update patches to follow the naming convention from
       https://gcc.gnu.org/ml/gcc-patches/2014-05/msg00346.html
@@ -123,12 +123,10 @@ def rename_types(text, where):
       "gimple_statement_switch" -> "gswitch"
       "gimple_switch" -> "gswitch *"
       "const_gimple_switch" -> "const gswitch *"
-    FIXME: Only touch lines in ChangeLog, and those beginning with a +???
-    FIXME: but we need to touch the - as well sometimes
     """
-    assert where in ('subject', 'patch')
-    src = Source(text)
+    assert where in ('subject', 'patch', 'file-on-disk')
     patterns = []
+    scopes = OrderedDict()
     for subclass in stmt_classes:
         for old, new in ((subclass.orig_name,
                           subclass.new_name),
@@ -152,15 +150,20 @@ def rename_types(text, where):
                     print(m.start(1))
                     print(m.end(1))
                     print(src._str[m.start(1):m.end(1)])
-                replacement = new
-                start, end = m.start(1), m.end(1)
+
+                scope = src.get_change_scope_at(m.start(1),
+                                                raise_exception=True)
+                if 0:
+                    print('scope: %r' % scope)
+                if scope not in scopes:
+                    scopes[scope] = scope
 
                 replacement = new
                 start, end = m.start(1), m.end(1)
 
                 if new.endswith(' *'):
                     src = _add_stars_in_decls(src, old, new, start, end,
-                                              within_patch=1)
+                                              within_patch=1 if where == 'patch' else 0)
 
                 # Avoid turning:
                 #   gimple_switch stmt
@@ -169,11 +172,23 @@ def rename_types(text, where):
                 # converting into
                 #   gswitch *stmt
                 # instead.
-                if where == 'patch':
+                if where != 'subject':
                     if new.endswith(' *') and src._str[end] == ' ':
                         end += 1
 
                 src = src.replace(start, end, replacement)
+
+    # Put the scopes back into forward order in the ChangeLog:
+    for scope in list(scopes)[::-1]:
+        if changelog:
+            changelog.append(scope,
+                             'Rename gimple subclass types.')
+
+    return src
+
+def rename_types_in_str(src, where):
+    src = Source(text)
+    src = rename_types_in_src(src, where, None)
     return src.str()
 
 def main():
@@ -194,12 +209,12 @@ def main():
         if 0:
             # Update the subclasses in the patch:
             text = str(p.msg.get_payload())
-            text = rename_types(text, 'patch')
+            text = rename_types_in_str(text, 'patch')
             p.msg.set_payload(text)
 
             # and in the Subject:
             p.msg.replace_header('Subject',
-                                 rename_types(p.msg['Subject'], 'subject'))
+                                 rename_types_in_str(p.msg['Subject'], 'subject'))
 
         # Locate the corresponding patch submitted in April 2014:
         pat = r'\[PATCH ([0-9]+)/89\] %s' % summary
