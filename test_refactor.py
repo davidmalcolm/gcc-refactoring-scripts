@@ -93,6 +93,19 @@ class GeneralTests(unittest.TestCase):
         self.assertEqual(src.get_change_scope_at(100),
                          'xtensa_memory')
 
+    def test_struct_2(self):
+        src = Source('\n'
+                     '};\n'
+                     '\n'
+                     'struct gimplify_ctx\n'
+                     '{\n'
+                     '  struct gimplify_ctx *prev_context;\n'
+                     '\n'
+                     '  vec<gimple_bind> bind_expr_stack;\n'
+                     '  tree temps;\n')
+        self.assertEqual(src.get_change_scope_at(100),
+                         'struct gimplify_ctx')
+
     def test_funcname_with_retval(self):
         src = Source(
             '\n'

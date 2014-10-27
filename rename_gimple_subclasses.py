@@ -147,6 +147,38 @@ def rename_types_in_src(src, where, changelog):
                 if changelog:
                     scope = src.get_change_scope_at(m.start(1),
                                                     raise_exception=True)
+                    # Some manual fixups:
+                    if scope == 'equal' and src.filename == 'gimplify.c':
+                        scope = 'struct gimplify_ctx'
+                    if scope == 'Copyright' and src.filename == 'coretypes.h':
+                        scope = None
+                    if scope == 'Copyright' and src.filename == 'gimple-builder.h':
+                        scope = 'build_assign'
+                    if scope in ('phi', 'Copyright') and src.filename == 'gimple-iterator.h':
+                        scope = 'gimple_phi_iterator::phi'
+                    if scope == 'typedefs' and src.filename == 'gimple.h':
+                        scope = 'is_a_helper <gimple_statement_cond *>'
+                    if scope == 'GTY' and src.filename == 'gimple.h':
+                        scope = 'gimple_statement_cond'
+                    if scope == 'Copyright' and src.filename == 'omp-low.c':
+                        scope = 'struct omp_for_data'
+                    if scope == 'hierarchy' and src.filename == 'gimple-low.c':
+                        scope = 'struct return_statements_t'
+                    if scope == 'information' and src.filename == 'gimple.h':
+                        scope = 'gimple_statement_call'
+                    if scope == 'Copyright' and src.filename == 'gimple-streamer-in.c':
+                        scope = 'input_phi'
+                    if scope == 'Copyright' and src.filename == 'tree-ssa-dom.c':
+                        scope = 'struct hashable_expr'
+                    if scope == 'land' and src.filename == 'gimple.h':
+                        scope = 'gimple_statement_catch'
+
+                    if scope in ('Copyright', 'phi', 'hierarchy', 'information',
+                                 'GTY', 'typedefs', 'equal', 'land'):
+                        raise ValueError('scope: %r in %r within line %r '
+                                         % (scope,
+                                            src.filename,
+                                            src.get_line_at(m.start(1))))
                     if 0:
                         print('scope: %r' % scope)
                     if scope not in scopes:

@@ -400,6 +400,7 @@ class Source:
     MACRO_PATTERN=r'^#define (?P<MACRO>[_a-zA-Z0-9]+)\(.*?\)\s+\\\n'
     STRUCT_PATTERN = (r'^struct' + ws + named_identifier_group('STRUCTNAME')
                       + opt_ws + '{' + opt_ws + '$')
+    STRUCT_PATTERN_2 = (r'^struct' + ws + named_identifier_group('STRUCTNAME') + '$')
     FUNC_PARAMS_PATTERN = (ws + named_identifier_group('FUNCNAME') + opt_ws + '\(')
     CLASS_PATTERN = (r'^struct' + ws + named_identifier_group('CLASS')
                      + ws + ':' + ws + 'public' + ws + '$')
@@ -443,6 +444,9 @@ class Source:
             return m.groupdict()['MACRO']
 
         m = get_last_match_multiline(self.STRUCT_PATTERN, src)
+        if m:
+            return 'struct %s' % m.groupdict()['STRUCTNAME']
+        m = get_last_match_multiline(self.STRUCT_PATTERN_2, src)
         if m:
             return 'struct %s' % m.groupdict()['STRUCTNAME']
 
