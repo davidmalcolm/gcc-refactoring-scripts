@@ -151,12 +151,13 @@ def rename_types_in_src(src, where, changelog):
                     print(m.end(1))
                     print(src._str[m.start(1):m.end(1)])
 
-                scope = src.get_change_scope_at(m.start(1),
-                                                raise_exception=True)
-                if 0:
-                    print('scope: %r' % scope)
-                if scope not in scopes:
-                    scopes[scope] = scope
+                if changelog:
+                    scope = src.get_change_scope_at(m.start(1),
+                                                    raise_exception=True)
+                    if 0:
+                        print('scope: %r' % scope)
+                    if scope not in scopes:
+                        scopes[scope] = scope
 
                 replacement = new
                 start, end = m.start(1), m.end(1)
@@ -179,14 +180,14 @@ def rename_types_in_src(src, where, changelog):
                 src = src.replace(start, end, replacement)
 
     # Put the scopes back into forward order in the ChangeLog:
-    for scope in list(scopes)[::-1]:
-        if changelog:
+    if changelog:
+        for scope in list(scopes)[::-1]:
             changelog.append(scope,
                              'Rename gimple subclass types.')
 
     return src
 
-def rename_types_in_str(src, where):
+def rename_types_in_str(text, where):
     src = Source(text)
     src = rename_types_in_src(src, where, None)
     return src.str()

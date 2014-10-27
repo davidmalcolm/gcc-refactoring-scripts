@@ -1,6 +1,6 @@
 import unittest
 
-from refactor_gimple_patches import rename_types
+from refactor_gimple_patches import rename_types_in_str as rename_types
 
 class RefactoringTests(unittest.TestCase):
     def test_subject(self):
