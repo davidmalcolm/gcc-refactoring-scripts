@@ -126,8 +126,13 @@ class Changelog:
             else:
                 lasttext = text
             if result == '':
-                result += wrap('* %s (%s): %s\n' % (self.filename, scope, text))
+                if scope:
+                    result += wrap('* %s (%s): %s\n' % (self.filename, scope, text))
+                else:
+                    # File-level changes
+                    result += wrap('* %s: %s\n' % (self.filename, text))
             else:
+                assert scope
                 result += wrap('(%s): %s\n' % (scope, text))
         return result, lasttext
 
@@ -351,6 +356,8 @@ class Source:
         if self.filename:
             if self.filename.endswith('.md'):
                 return self._md_get_change_scope_at(idx, raise_exception)
+            if self.filename.endswith('.def'):
+                return None
 
         return self._c_based_get_change_scope_at(idx, raise_exception)
 
