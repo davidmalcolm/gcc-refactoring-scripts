@@ -56,8 +56,14 @@ class GimpleAccessor(namedtuple('GimpleAccessor',
             if paramdecl == 'const char *':
                 paramtypes.append(paramdecl)
             else:
-                words = paramdecl.split()
-                paramtypes.append(words[0])
+                m = re.match(r'(.+\*)(\S+)', paramdecl)
+                if m:
+                    if 0:
+                        print('%r : %r' % (paramdecl, m.groups()))
+                    paramtypes.append(m.group(1).strip())
+                else:
+                    words = paramdecl.split()
+                    paramtypes.append(' '.join(words[:-1]))
         return GimpleAccessor(line, returntype, symbol, paramtypes)
 
     def is_builder(self):
@@ -75,12 +81,14 @@ class GimpleAccessor(namedtuple('GimpleAccessor',
                 return prefix
         if ga.symbol.startswith('gimple_omp_'):
             return 'gimple_omp_'
-        raise ValueError()
+        raise ValueError(self)
 
     def get_constless_first_param(self):
         paramtype = self.paramtypes[0]
         if paramtype.startswith('const_'):
             paramtype = paramtype[len('const_'):]
+        if paramtype.startswith('const '):
+            paramtype = paramtype[len('const '):]
         return paramtype
 
     def __hash__(self):
@@ -115,8 +123,13 @@ def report(gas, title, pred):
 
 gas = sorted(set(list(GimpleAccessor.get_all())),
              lambda ga1, ga2: cmp(ga1.symbol, ga2.symbol))
-#for ga in gas:
-#    print(ga)
+if 0:
+    for ga in gas:
+        print(ga)
+        print('  is_builder: %r' % ga.is_builder())
+        print('  is_accessor: %r' % ga.is_accessor())
+        #print('  get_prefix: %r' % ga.get_prefix())
+        print('  get_constless_first_param: %r' % ga.get_constless_first_param())
 
 NOT_TO_BE_CONVERTED = set(['gimple_assign_cast_p',
                            'gimple_assign_copy_p',
@@ -150,6 +163,7 @@ NOT_TO_BE_CONVERTED = set(['gimple_assign_cast_p',
                            'gimple_lineno',
                            'gimple_location',
                            'gimple_location_ptr',
+                           'gimple_location_safe',
                            'gimple_modified_p',
                            'gimple_no_warning_p',
                            'gimple_nop_p',
@@ -234,7 +248,7 @@ for prefixtype in sorted(accessors.keys()):
         prefixtype = 'gimple_omp_'
     prefix_accessors = sorted(accessors[prefixtype])
     done = len([ga for ga in prefix_accessors
-                if ga.get_constless_first_param() == prefixtype[:-1]])
+                if ga.get_constless_first_param() != 'gimple'])
     todo = len([ga for ga in prefix_accessors
                 if ga.get_constless_first_param() == 'gimple'])
     percentage = (done * 100) / (done + todo)
