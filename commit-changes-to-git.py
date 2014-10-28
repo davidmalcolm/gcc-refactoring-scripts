@@ -46,8 +46,10 @@ def parse_changelog(path):
                     body += line
     return entries
 
+clogname = 'ChangeLog'
+
 # "git add" every changed file that's not a ChangeLog
-os.system("git add $(git diff | diffstat -lp1 | grep -v ChangeLog)")
+os.system("git add $(git diff | diffstat -lp1 | grep -v %s)" % clogname)
 
 # Locate changed ChangeLogs, using it to build a commit message
 p = Popen("git diff | diffstat -lp1", stdout=PIPE, shell=True)
@@ -56,7 +58,7 @@ commit_msg = "%s\n\n" % sys.argv[1] # initial line of commit message
 for changelog_path in out.splitlines():
     from pprint import pprint
     entries = parse_changelog(changelog_path)
-    commit_msg += '%s\n' % changelog_path[:-9] # drop "ChangeLog" suffix
+    commit_msg += '%s\n' % changelog_path[:-len(clogname)] # drop "ChangeLog" suffix
     commit_msg += entries[0].body
 print(commit_msg)
 
@@ -67,4 +69,4 @@ p.communicate(commit_msg)
 
 if 0:
     # Purge the locally changed changelogs:
-    os.system("git checkout $(git diff | diffstat -lp1 | grep ChangeLog)")
+    os.system("git checkout $(git diff | diffstat -lp1 | grep %s)" % clogname)
