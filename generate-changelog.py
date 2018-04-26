@@ -28,6 +28,7 @@ class Parser:
         self.omit_hunks = omit_hunks
         self.show_linenums = show_linenums
         self.previous_scope = None
+        self.new_file = False
 
     def parse_linespans(self, linespans):
         numgrp = '([0-9]+)'
@@ -48,12 +49,20 @@ class Parser:
             return
 
         if line.startswith('diff --git'):
+            self.new_file = False
             return
 
         if line.startswith('index '):
             return
 
         if line.startswith('--- a/'):
+            return
+
+        if line.startswith('new file mode'):
+            return
+
+        if line == '--- /dev/null\n':
+            self.new_file = True
             return
 
         # '+++ b/gcc/asan.c\n'
@@ -77,13 +86,20 @@ class Parser:
             # Get path relative to the ChangeLog file
             # e.g. "gimple.h"
             rel_path = self.cll.get_path_relative_to_changelog(cll_path)
-            sys.stdout.write('\t* %s ' % rel_path)
-            self.initial_hunk = True
-            self.previous_scope = None
+            sys.stdout.write('\t* %s' % rel_path)
+            if self.new_file:
+                text = 'New file.'
+                if 'testsuite' in cll_path:
+                    text = 'New test.'
+                sys.stdout.write(': %s\n' % text)
+            else:
+                sys.stdout.write(' ')
+                self.initial_hunk = True
+                self.previous_scope = None
             return
 
         # '@@ -1936,7 +1936,7 @@ transform_statements (void)\n'
-        if line.startswith('@'):
+        if line.startswith('@') and not self.new_file:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
