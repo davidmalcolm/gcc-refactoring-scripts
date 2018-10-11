@@ -12,10 +12,10 @@ indented to distinguish them from the surrounding metadata, so
 that you can e.g. fix up scopes.
 """
 
+import argparse
 import fileinput
 import re
 import sys
-import argparse
 
 from refactor import ChangeLogLayout
 
