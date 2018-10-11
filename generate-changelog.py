@@ -20,6 +20,8 @@ import unittest
 
 from refactor import ChangeLogLayout
 
+NEW_FILE, DELETED_FILE, CHANGED_FILE = range(3)
+
 class Parser:
     def __init__(self, omit_hunks, show_linenums):
         self.cll = ChangeLogLayout('.')
@@ -29,7 +31,8 @@ class Parser:
         self.omit_hunks = omit_hunks
         self.show_linenums = show_linenums
         self.previous_scope = None
-        self.new_file = False
+        self.state = CHANGED_FILE
+        self.filename = None
 
     def write(self, msg):
         sys.stdout.write(msg)
@@ -40,6 +43,45 @@ class Parser:
                r'\+' + numgrp +',' + numgrp)
         m = re.match(pat, linespans)
         return m.groups()
+
+    def set_file(self, filename):
+        if filename == self.filename:
+            return
+        self.filename = filename
+
+        # Start of per-file changes
+        git_path = filename # e.g. "gcc/gimple.h"
+        cll_path = './%s' % git_path # e.g. "./gcc/gimple.h"
+        dir_ = self.cll.locate_dir(cll_path) # e.g "./gcc"
+
+        # Strip off leading "./":
+        assert dir_.startswith('./')
+        dir_ = dir_[2:]
+
+        # Emit e.g. "gcc/ChangeLog:" whenever the enclosing ChangeLog
+        # changes.
+        if dir_ != self.current_dir:
+            self.current_dir = dir_
+            self.write('%s/ChangeLog:\n' % dir_)
+
+        # Get path relative to the ChangeLog file
+        # e.g. "gimple.h"
+        rel_path = self.cll.get_path_relative_to_changelog(cll_path)
+        self.write('\t* %s' % rel_path)
+        if self.state in (NEW_FILE, DELETED_FILE):
+            if self.state == NEW_FILE:
+                text = 'New file.'
+                if 'testsuite' in cll_path:
+                    text = 'New test.'
+            else:
+                text = 'Deleted file.'
+                if 'testsuite' in cll_path:
+                    text = 'Deleted test.'
+            self.write(': %s\n' % text)
+        else:
+            self.write(' ')
+            self.initial_hunk = True
+            self.previous_scope = None
 
     def on_line(self, line):
         if self.within_preamble:
@@ -53,57 +95,38 @@ class Parser:
             return
 
         if line.startswith('diff --git'):
-            self.new_file = False
+            self.state = CHANGED_FILE
+            self.filename = None
             return
 
         if line.startswith('index '):
             return
 
-        if line.startswith('--- a/'):
-            return
-
         if line.startswith('new file mode'):
+            self.state = NEW_FILE
+            return
+        if line.startswith('deleted file mode'):
+            self.state = DELETED_FILE
             return
 
+        # e.g. '--- a/gcc/asan.c\n'
+        m = re.match(r'--- a/(.+)', line)
+        if m:
+            self.set_file(m.group(1))
+            return
         if line == '--- /dev/null\n':
-            self.new_file = True
             return
 
-        # '+++ b/gcc/asan.c\n'
+        # e.g. '+++ b/gcc/asan.c\n'
         m = re.match(r'\+\+\+ b/(.+)', line)
         if m:
-            # Start of per-file changes
-            git_path = m.group(1) # e.g. "gcc/gimple.h"
-            cll_path = './%s' % git_path # e.g. "./gcc/gimple.h"
-            dir_ = self.cll.locate_dir(cll_path) # e.g "./gcc"
-
-            # Strip off leading "./":
-            assert dir_.startswith('./')
-            dir_ = dir_[2:]
-
-            # Emit e.g. "gcc/ChangeLog:" whenever the enclosing ChangeLog
-            # changes.
-            if dir_ != self.current_dir:
-                self.current_dir = dir_
-                self.write('%s/ChangeLog:\n' % dir_)
-
-            # Get path relative to the ChangeLog file
-            # e.g. "gimple.h"
-            rel_path = self.cll.get_path_relative_to_changelog(cll_path)
-            self.write('\t* %s' % rel_path)
-            if self.new_file:
-                text = 'New file.'
-                if 'testsuite' in cll_path:
-                    text = 'New test.'
-                self.write(': %s\n' % text)
-            else:
-                self.write(' ')
-                self.initial_hunk = True
-                self.previous_scope = None
+            self.set_file(m.group(1))
+            return
+        if line == '+++ /dev/null\n':
             return
 
         # '@@ -1936,7 +1936,7 @@ transform_statements (void)\n'
-        if line.startswith('@') and not self.new_file:
+        if line.startswith('@') and self.state == CHANGED_FILE:
             # This is a hunk.  Print the funcname, and "Likewise."
             # since we'll probably want that in most places.
             m = re.match('@@ (.+) @@ (.+)\n', line)
@@ -210,6 +233,29 @@ gcc/testsuite/ChangeLog:
                 +/* { dg-options "-fdiagnostics-show-caret" } */
                 +
                 +#define MACRO_1(X,Y) /* { dg-line "def_of_MACRO_1" } */
+""")
+
+    def test_deleted_file(self):
+        diff = """
+diff --git a/gcc/testsuite/g++.dg/diagnostic/macro-arg-count.C b/gcc/testsuite/g++.dg/diagnostic/macro-arg-count.C
+deleted file mode 100644
+index 12b2dbd..0000000
+--- a/gcc/testsuite/g++.dg/diagnostic/macro-arg-count.C
++++ /dev/null
+@@ -1,3 +0,0 @@
+-// { dg-options "-fdiagnostics-show-caret" }
+-
+-#define MACRO_1(X,Y)
+"""
+        clog = self.get_clog(diff)
+        self.assertMultiLineEqual(clog,
+                                  """
+gcc/testsuite/ChangeLog:
+	* g++.dg/diagnostic/macro-arg-count.C: Deleted test.
+                @@ -1,3 +0,0 @@
+                -// { dg-options "-fdiagnostics-show-caret" }
+                -
+                -#define MACRO_1(X,Y)
 """)
 
 def main():
