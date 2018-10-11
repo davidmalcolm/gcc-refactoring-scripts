@@ -141,6 +141,9 @@ class Parser:
             if scope[0] == 'struct':
                 # e.g. "struct foo"
                 scope = ' '.join(scope)
+            elif scope[0] == 'proc':
+                # e.g. "struct foo"
+                scope = scope[1]
             else:
                 # Assume a function decl with args; use just the name:
                 scope = scope[0]
@@ -256,6 +259,22 @@ gcc/testsuite/ChangeLog:
                 -// { dg-options "-fdiagnostics-show-caret" }
                 -
                 -#define MACRO_1(X,Y)
+""")
+
+    def test_tcl_procnames(self):
+        """Verify that we capture the names of Tcl procedures"""
+        diff = """
+diff --git a/gcc/testsuite/lib/multiline.exp b/gcc/testsuite/lib/multiline.exp
+index 6c7ecdf..6e431d9 100644
+--- a/gcc/testsuite/lib/multiline.exp
++++ b/gcc/testsuite/lib/multiline.exp
+@@ -72,6 +72,14 @@ proc dg-begin-multiline-output { args } {
+"""
+        clog = self.get_clog(diff)
+        self.assertMultiLineEqual(clog,
+                                  """
+gcc/testsuite/ChangeLog:
+	* lib/multiline.exp (dg-begin-multiline-output): Likewise.
 """)
 
 def main():
