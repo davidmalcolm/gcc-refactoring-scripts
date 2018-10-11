@@ -30,6 +30,9 @@ class Parser:
         self.previous_scope = None
         self.new_file = False
 
+    def write(self, msg):
+        sys.stdout.write(msg)
+
     def parse_linespans(self, linespans):
         numgrp = '([0-9]+)'
         pat = ('-' + numgrp +',' + numgrp + ' '
@@ -41,10 +44,10 @@ class Parser:
         if self.within_preamble:
             if line.startswith('diff --git'):
                 self.within_preamble = False
-                sys.stdout.write('\n')
+                self.write('\n')
             if line.startswith(' '):
                 # Echo any commit message
-                print(line.strip())
+                self.write('%s\n' % line.strip())
             # Strip away preamble metadata
             return
 
@@ -81,19 +84,19 @@ class Parser:
             # changes.
             if dir_ != self.current_dir:
                 self.current_dir = dir_
-                print('%s/ChangeLog:' % dir_)
+                self.write('%s/ChangeLog:\n' % dir_)
 
             # Get path relative to the ChangeLog file
             # e.g. "gimple.h"
             rel_path = self.cll.get_path_relative_to_changelog(cll_path)
-            sys.stdout.write('\t* %s' % rel_path)
+            self.write('\t* %s' % rel_path)
             if self.new_file:
                 text = 'New file.'
                 if 'testsuite' in cll_path:
                     text = 'New test.'
-                sys.stdout.write(': %s\n' % text)
+                self.write(': %s\n' % text)
             else:
-                sys.stdout.write(' ')
+                self.write(' ')
                 self.initial_hunk = True
                 self.previous_scope = None
             return
@@ -106,7 +109,7 @@ class Parser:
             if self.show_linenums:
                 linespans = m.group(1)
                 startline = self.parse_linespans(linespans)[2]
-                sys.stdout.write(startline)
+                self.write(startline)
             if m:
                 scope = m.group(2).split(' ')
             else:
@@ -123,7 +126,7 @@ class Parser:
             else:
                 indent = '\t'
             if not self.omit_hunks or scope != self.previous_scope:
-                print('%s(%s): Likewise.' % (indent, scope))
+                self.write('%s(%s): Likewise.\n' % (indent, scope))
                 self.previous_scope = scope
             return
 
@@ -132,7 +135,7 @@ class Parser:
         # We can then use this to identify and describe the underlying
         # changes (and perhaps fix erroneous scope metadata)
         if not self.omit_hunks:
-            print('%s%s' % (' ' * 16, line.rstrip()))
+            self.write('%s%s\n' % (' ' * 16, line.rstrip()))
 
 
 def main():
