@@ -34,12 +34,10 @@ class ChangeLogLayout:
     """
     def __init__(self, basedir):
         self.dirs = []
-        os.path.walk(basedir, self._visit, None)
+        for dirpath, dirs, files in os.walk(basedir):
+            if 'ChangeLog' in files:
+                self.dirs.append(dirpath)
         self.dirs = sorted(self.dirs)
-
-    def _visit(self, arg, dirname, names):
-        if 'ChangeLog' in names:
-            self.dirs.append(dirname)
 
     def locate_dir(self, path):
         """
