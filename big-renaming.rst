@@ -1,22 +1,22 @@
 Big source renaming/moving proposal
 -----------------------------------
 
-The "gcc/" subdirectory of GCC's source repo currently has > 1000 files.
+The ``gcc/`` subdirectory of GCC's source repo currently has > 1000 files.
 This:
 
 * make it harder for newcomers to grasp the high-level divisions in the optimizer
 
-* leads to `rate-limiting in the ``gcc-mirror`` repo on github <https://github.com/gcc-mirror/gcc/tree/master/gcc>`_
+* leads to `rate-limiting in the gcc-mirror repo on github <https://github.com/gcc-mirror/gcc/tree/master/gcc>`_
 
 Proposal:
 
 * Introduce some subdirs and move stuff as appropriate:
 
-  * `gcc/gimple/`
+  * ``gcc/gimple/``
 
-  * `gcc/rtl/`
+  * ``gcc/rtl/``
 
-  * Maybe others e.g. `gcc/ipa/`, `gcc/tree/`, `gcc/driver` ???
+  * Maybe others e.g. ``gcc/ipa/``, ``gcc/tree/``, ``gcc/driver`` ???
 
   * Don't add any more nesting below that
 
@@ -33,6 +33,8 @@ Proposal:
 Files to stay where they are
 ============================
 (or possibly some of these to a "types" subdir?)
+
+Proposed::
 
   gcc/alias.cc   # uses both gimple and rtl
   gcc/alias.h
@@ -183,6 +185,8 @@ Files to stay where they are
 Files I'm not sure about
 ========================
 
+Thoughts?::
+
   gcc/attr-fnspec.h
   gcc/btfout.cc
   gcc/cfgbuild.cc
@@ -204,8 +208,10 @@ Files I'm not sure about
   gcc/vec.h
 
 
-Files to move to "gcc/gimple"
-=============================
+Files to move to ``gcc/gimple/``
+================================
+
+Proposed::
 
   gcc/adjust-alignment.cc
   gcc/coroutine-passes.cc
@@ -363,8 +369,10 @@ Files to move to "gcc/gimple"
   gcc/vtable-verify.h
 
 
-Files to move to "gcc/rtl"
-==========================
+Files to move to ``gcc/rtl/``
+=============================
+
+Proposed::
 
   gcc/addresses.h
   gcc/auto-inc-dec.cc
@@ -488,16 +496,20 @@ Files to move to "gcc/rtl"
   gcc/web.cc
 
 
-Files to move to "gcc/ipa"
-==========================
+Files to move to ``gcc/ipa/``
+=============================
+
+Proposed::
 
   gcc/auto-profile.cc
   gcc/auto-profile.h
   gcc/multiple_target.cc
 
 
-Files to move to "gcc/tree" ???
-===============================
+Files to move to ``gcc/tree/`` ???
+==================================
+
+Maybe::
 
   gcc/attribs.cc
   gcc/attribs.h
@@ -507,6 +519,8 @@ Files to move to "gcc/tree" ???
 
 To be classified
 ================
+
+TODO::
 
   gcc/cgraphbuild.cc
   gcc/cgraph.cc
