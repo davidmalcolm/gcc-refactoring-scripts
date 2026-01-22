@@ -207,7 +207,6 @@ Thoughts?::
   gcc/vec.cc
   gcc/vec.h
 
-
 Files to move to ``gcc/gimple/``
 ================================
 
@@ -516,6 +515,43 @@ Maybe::
   gcc/convert.cc
   gcc/convert.h
 
+Files to move to ``gcc/gen``
+================================
+
+  gcc/genattr.cc
+  gcc/genattr-common.cc
+  gcc/genattrtab.cc
+  gcc/genautomata.cc
+  gcc/gencfn-macros.cc
+  gcc/gencheck.cc
+  gcc/genchecksum.cc
+  gcc/gencodes.cc
+  gcc/genconditions.cc
+  gcc/genconfig.cc
+  gcc/genconstants.cc
+  gcc/genemit.cc
+  gcc/genenums.cc
+  gcc/genextract.cc
+  gcc/genflags.cc
+  gcc/gengenrtl.cc
+  gcc/gengtype.cc
+  gcc/gengtype.h
+  gcc/gengtype-parse.cc
+  gcc/gengtype-state.cc
+  gcc/genhooks.cc
+  gcc/genmatch.cc
+  gcc/genmddeps.cc
+  gcc/genmddump.cc
+  gcc/genmodes.cc
+  gcc/genopinit.cc
+  gcc/genoutput.cc
+  gcc/genpeep.cc
+  gcc/genpreds.cc
+  gcc/genrecog.cc
+  gcc/gensupport.cc
+  gcc/gensupport.h
+  gcc/gentarget-def.cc
+  gcc/genversion.cc
 
 To be classified
 ================
@@ -613,42 +649,8 @@ TODO::
   gcc/gcse-common.cc
   gcc/gcse-common.h
   gcc/gcse.h
-  gcc/genattr.cc
-  gcc/genattr-common.cc
-  gcc/genattrtab.cc
-  gcc/genautomata.cc
-  gcc/gencfn-macros.cc
-  gcc/gencheck.cc
-  gcc/genchecksum.cc
-  gcc/gencodes.cc
-  gcc/genconditions.cc
-  gcc/genconfig.cc
-  gcc/genconstants.cc
-  gcc/genemit.cc
-  gcc/genenums.cc
   gcc/generic-match.h
   gcc/generic-match-head.cc
-  gcc/genextract.cc
-  gcc/genflags.cc
-  gcc/gengenrtl.cc
-  gcc/gengtype.cc
-  gcc/gengtype.h
-  gcc/gengtype-parse.cc
-  gcc/gengtype-state.cc
-  gcc/genhooks.cc
-  gcc/genmatch.cc
-  gcc/genmddeps.cc
-  gcc/genmddump.cc
-  gcc/genmodes.cc
-  gcc/genopinit.cc
-  gcc/genoutput.cc
-  gcc/genpeep.cc
-  gcc/genpreds.cc
-  gcc/genrecog.cc
-  gcc/gensupport.cc
-  gcc/gensupport.h
-  gcc/gentarget-def.cc
-  gcc/genversion.cc
   gcc/ggc-common.cc
   gcc/ggc.h
   gcc/ggc-internal.h
